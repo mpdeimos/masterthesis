@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+	version $Rev: 36048 $
+	@levd.rating YELLOW Hash: 63C66B61AD5DB9E2C1D8E95B2061D7D4
+-->
+<bundle xmlns="http://conqat.cs.tum.edu/ns/bundle">
+   <name>Bundle Name</name>
+   <provider>The ConQAT Project</provider>
+   <description>Bundle Description</description>
+   <version major="2011" minor="9"/>
+   <requiresCore major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.code_clones" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.persistence" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.sourcecode" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.resource" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.commons" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.dotnet" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.abap" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.architecture" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.blocklib" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.bugzilla" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.ccsm" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.clone_tracking" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.codesearch" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.cpp" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.finding_tracking" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.graph" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.html_presentation" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.incubator" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.io" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.java" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.levd" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.matching" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.model_clones" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.msr_presentation" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.php" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.recommender" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.releng" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.report" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.scripting" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.self" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.server" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.simion" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.simulink" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.svn" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.systemtest" major="2011" minor="9"/>
+   <dependsOn bundleId="org.conqat.engine.text" major="2011" minor="9"/>
+</bundle>

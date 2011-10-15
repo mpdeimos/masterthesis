@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+	$Id: $$
+	$Rev: 12646 $
+	@levd.rating YELLOW Rev: 11033
+-->
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.CD">
+      <block name="simple-java-scope" spec="org.conqat.engine.java.resource.SimpleJavaScope">
+         <source dir="@src"/>
+         <byte-code dir="@bin"/>
+         <include pattern="**"/>
+      </block>
+      <block name="java-clone-chain2" spec="org.conqat.engine.code_clones.languages.java.JavaCloneChain">
+         <input scope="@simple-java-scope.scope"/>
+         <output dir="@out" reportname="clones.xml"/>
+         <info groupId="clone-detection"/>
+         <clone minlength="6"/>
+      </block>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="bin">
+         <part string="@dir.attr"/>
+         <separator string="/"/>
+         <part string="bin"/>
+      </processor>
+      <param name="dir">
+         <attr name="attr">
+            <doc>/home/mpdeimos/workspaces/cq/CD-Tests/</doc>
+         </attr>
+      </param>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="src">
+         <part string="@dir.attr"/>
+         <separator string="/"/>
+         <part string="src"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="out">
+         <part string="@dir.attr"/>
+         <separator string="/"/>
+         <part string="out"/>
+      </processor>
+      <processor class="org.conqat.engine.html_presentation.HTMLPresentation" name="html-presentation">
+         <result ref="@java-clone-chain2.html*"/>
+         <output dir="@out"/>
+      </processor>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="simple-java-scope">
+         <entry key="pos" value="228,168"/>
+      </entries>
+      <entries namespace="java-clone-chain2">
+         <entry key="pos" value="240,276"/>
+      </entries>
+      <entries namespace="bin">
+         <entry key="pos" value="240,72"/>
+      </entries>
+      <entries namespace="dir">
+         <entry key="pos" value="264,0"/>
+      </entries>
+      <entries namespace="src">
+         <entry key="pos" value="24,60"/>
+      </entries>
+      <entries namespace="out">
+         <entry key="pos" value="456,48"/>
+         <entry key="edges_invisible" value="true"/>
+      </entries>
+      <entries namespace="html-presentation">
+         <entry key="pos" value="240,360"/>
+      </entries>
+   </meta>
+</conqat>

@@ -1,0 +1,101 @@
+/*-------------------------------------------------------------------------+
+|                                                                          |
+| Copyright 2005-2011 The ConQAT Project                                   |
+|                                                                          |
+| Licensed under the Apache License, Version 2.0 (the "License");          |
+| you may not use this file except in compliance with the License.         |
+| You may obtain a copy of the License at                                  |
+|                                                                          |
+|    http://www.apache.org/licenses/LICENSE-2.0                            |
+|                                                                          |
+| Unless required by applicable law or agreed to in writing, software      |
+| distributed under the License is distributed on an "AS IS" BASIS,        |
+| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. |
+| See the License for the specific language governing permissions and      |
+| limitations under the License.                                           |
++-------------------------------------------------------------------------*/
+package org.conqat.engine.clone_tracking;
+
+import static org.conqat.engine.commons.CommonUtils.DEFAULT_DATE_FORMAT_PATTERN;
+import static org.conqat.engine.commons.ConQATParamDoc.DATE_PATTERN_DESC;
+
+import java.sql.SQLException;
+import java.util.Date;
+
+import org.conqat.engine.clone_tracking.gateways.CloneGateway;
+import org.conqat.engine.clone_tracking.gateways.KeyValueGateway;
+import org.conqat.engine.commons.CommonUtils;
+import org.conqat.engine.commons.ConQATParamDoc;
+import org.conqat.engine.core.core.AConQATAttribute;
+import org.conqat.engine.core.core.AConQATParameter;
+import org.conqat.engine.core.core.AConQATProcessor;
+import org.conqat.engine.core.core.ConQATException;
+import org.conqat.engine.core.logging.IConQATLogger;
+
+/**
+ * {@ConQAT.Doc}
+ * 
+ * @author juergens
+ * @author $Author$
+ * @version $Rev$
+ * @levd.rating YELLOW Hash: 7A3BFA5E746F652F9B358719FE4A277E
+ */
+@AConQATProcessor(description = "Selects the timestamp from the database for which the first clones are stored. "
+		+ "If this timestamp is used as baseline date for clone detection, "
+		+ "then clone churn starts with the second detection. "
+		+ "Can be overridden to run against a fixed baseline date.")
+public class OldestCloneDateDef extends DbSpaceProcessorBase {
+
+	/** Default date */
+	Date defaultDate = null;
+
+	/** Date that gets used instead if it is set */
+	Date overridingDate = null;
+
+	/** {@ConQAT.Doc} */
+	@AConQATParameter(name = "default", minOccurrences = 1, maxOccurrences = 1, description = "Set date object that gets used if no valus is stored in the database")
+	public void setDefaultDate(
+			@AConQATAttribute(name = "date", description = ConQATParamDoc.INPUT_REF_DESC) Date defaultDate) {
+		this.defaultDate = defaultDate;
+	}
+
+	/** {@ConQAT.Doc} */
+	@AConQATParameter(name = "overriding-date", minOccurrences = 0, maxOccurrences = 1, description = "If set, this date is used instead of the one stored in the database.")
+	public void setDate(
+			@AConQATAttribute(name = "value", description = "Date") String dateString,
+			@AConQATAttribute(name = "format", description = DATE_PATTERN_DESC
+					+ " [" + DEFAULT_DATE_FORMAT_PATTERN + "]", defaultValue = DEFAULT_DATE_FORMAT_PATTERN) String formatString)
+			throws ConQATException {
+
+		overridingDate = CommonUtils.parseDate(dateString, formatString);
+	}
+
+	/** {@inheritDoc} */
+	public Date process() throws ConQATException {
+		Date result;
+		if (overridingDate == null) {
+			result = selectEarliestDate();
+		} else {
+			result = overridingDate;
+		}
+
+		if (result == null) {
+			result = defaultDate;
+		}
+
+		getLogger().debug("Date: " + result);
+		return result;
+	}
+
+	/** Select date of earliest stored clone */
+	private Date selectEarliestDate() throws ConQATException {
+		try {
+			IConQATLogger logger = getLogger();
+			KeyValueGateway kvg = new KeyValueGateway(dbSpace, logger);
+			return new CloneGateway(dbSpace, logger, kvg)
+					.getEarliestTimestamp();
+		} catch (SQLException e) {
+			throw new ConQATException("Problems with database: ", e);
+		}
+	}
+}

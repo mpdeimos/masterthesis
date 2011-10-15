@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+	$Id: $$
+	$Rev: 12646 $
+	@levd.rating YELLOW Rev: 11033
+-->
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.tracking.CloneTrackingChainCP">
+      <block name="clone-tracing" spec="org.conqat.engine.ccsm.clonedetective.tracking.CloneTracking">
+         <clone minlength="@clone.minlength"/>
+         <input detectionresult="@input.detectionresult"/>
+         <database space="@database.space"/>
+      </block>
+      <block name="clone-churn" spec="org.conqat.engine.ccsm.clonedetective.tracking.CloneChurn">
+         <baseline date="@baseline.date"/>
+         <tracked clones="@clone-tracing.tracked-clones"/>
+         <database space="@database.space"/>
+      </block>
+      <block name="clone-churn-output" spec="org.conqat.engine.ccsm.clonedetective.tracking.CloneChurnOutput">
+         <info groupId="@group-id"/>
+         <added-clones ref="@clone-churn.added-clones"/>
+         <removed-clones ref="@clone-churn.removed-clones"/>
+         <consistently-modified-clones ref="@clone-churn.consistently-modified-clones"/>
+         <inconsistently-modified-clones ref="@clone-churn.inconsistently-modified-clones"/>
+         <output dir="@output.dir"/>
+      </block>
+      <param name="clone">
+         <attr name="minlength"/>
+      </param>
+      <param name="input">
+         <attr name="detectionresult"/>
+      </param>
+      <param name="database">
+         <attr name="space"/>
+      </param>
+      <param name="baseline">
+         <attr name="date"/>
+      </param>
+      <param name="output">
+         <attr name="dir"/>
+      </param>
+      <out name="html-added-clones" ref="@clone-churn-output.added-clones-list"/>
+      <out name="html-removed-clones" ref="@clone-churn-output.removed-clones-list"/>
+      <out name="html-consistently-modified-clones" ref="@clone-churn-output.consistently-modified-clones-list"/>
+      <out name="html-inconsistently-modified-clones" ref="@clone-churn-output.inconsistently-modified-clones-list"/>
+      <out name="tracked-clones" ref="@clone-tracing.tracked-clones"/>
+      <out name="html-inconsistently-modified-clones-details" ref="@clone-churn-output.inconsistently-modified-clones-detail-list"/>
+      <out name="removed-clones" ref="@clone-churn.removed-clones"/>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="group-id">
+         <part string="Clone Churn [since "/>
+         <part string="@baseline.date"/>
+         <part string="]"/>
+      </processor>
+      <out name="inconsistently-modified-clones" ref="@clone-churn.inconsistently-modified-clones"/>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="clone-tracing">
+         <entry key="pos" value="228,180"/>
+      </entries>
+      <entries namespace="clone-churn">
+         <entry key="pos" value="228,300"/>
+      </entries>
+      <entries namespace="clone-churn-output">
+         <entry key="pos" value="228,420"/>
+      </entries>
+      <entries namespace="clone">
+         <entry key="pos" value="204,60"/>
+      </entries>
+      <entries namespace="input">
+         <entry key="pos" value="312,60"/>
+      </entries>
+      <entries namespace="database">
+         <entry key="pos" value="420,60"/>
+      </entries>
+      <entries namespace="baseline">
+         <entry key="pos" value="84,60"/>
+      </entries>
+      <entries namespace="output">
+         <entry key="pos" value="540,336"/>
+      </entries>
+      <entries namespace="html-added-clones">
+         <entry key="pos" value="84,540"/>
+      </entries>
+      <entries namespace="html-removed-clones">
+         <entry key="pos" value="204,540"/>
+      </entries>
+      <entries namespace="html-consistently-modified-clones">
+         <entry key="pos" value="324,540"/>
+      </entries>
+      <entries namespace="html-inconsistently-modified-clones">
+         <entry key="pos" value="444,540"/>
+      </entries>
+      <entries namespace="tracked-clones">
+         <entry key="pos" value="420,312"/>
+      </entries>
+      <entries namespace="html-inconsistently-modified-clones-details">
+         <entry key="pos" value="564,540"/>
+      </entries>
+      <entries namespace="removed-clones">
+         <entry key="pos" value="528,444"/>
+      </entries>
+      <entries namespace="group-id">
+         <entry key="pos" value="24,300"/>
+      </entries>
+      <entries namespace="inconsistently-modified-clones">
+         <entry key="pos" value="48,432"/>
+      </entries>
+   </meta>
+</conqat>

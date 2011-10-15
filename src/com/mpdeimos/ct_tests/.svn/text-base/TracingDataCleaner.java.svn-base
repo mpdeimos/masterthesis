@@ -1,0 +1,62 @@
+/*-------------------------------------------------------------------------+
+|                                                                          |
+| Copyright 2005-2011 The ConQAT Project                                   |
+|                                                                          |
+| Licensed under the Apache License, Version 2.0 (the "License");          |
+| you may not use this file except in compliance with the License.         |
+| You may obtain a copy of the License at                                  |
+|                                                                          |
+|    http://www.apache.org/licenses/LICENSE-2.0                            |
+|                                                                          |
+| Unless required by applicable law or agreed to in writing, software      |
+| distributed under the License is distributed on an "AS IS" BASIS,        |
+| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. |
+| See the License for the specific language governing permissions and      |
+| limitations under the License.                                           |
++-------------------------------------------------------------------------*/
+package org.conqat.engine.clone_tracking;
+
+import java.sql.SQLException;
+
+import org.conqat.engine.clone_tracking.gateways.CloneClassGateway;
+import org.conqat.engine.clone_tracking.gateways.KeyValueGateway;
+import org.conqat.engine.clone_tracking.gateways.UnitGateway;
+import org.conqat.engine.core.core.AConQATProcessor;
+import org.conqat.engine.core.core.ConQATException;
+
+/**
+ * {@ConQAT.Doc}
+ * 
+ * @author juergens
+ * @author $Author$
+ * @version $Rev$
+ * @levd.rating YELLOW Hash: DC5366D2C08EA93A061EE025385AFD84
+ */
+@AConQATProcessor(description = "Delete all tracing data from the database")
+public class TracingDataCleaner extends DbSpaceProcessorBase {
+
+	/** {@inheritDoc} */
+	public Object process() throws ConQATException {
+
+		try {
+			CloneClassGateway cloneClassGateway = new CloneClassGateway(
+					dbSpace, getLogger());
+			cloneClassGateway.emptyTable();
+
+			cloneClassGateway.getCloneGateway().emptyTable();
+
+			UnitGateway unitGateway = new UnitGateway(dbSpace, getLogger());
+			unitGateway.emptyTable();
+
+			KeyValueGateway kvGateway = new KeyValueGateway(dbSpace,
+					getLogger());
+			kvGateway.emptyTable();
+		} catch (SQLException e) {
+			throw new ConQATException("Problems with database: ", e);
+		}
+
+		// this processor is a sink
+		return null;
+	}
+
+}

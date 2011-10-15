@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+	$Id: $$
+	$Rev: 12646 $
+	@levd.rating YELLOW Rev: 11033
+-->
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.CD2">
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="db">
+         <part string="@out"/>
+         <separator string="/"/>
+         <part string="db.hsql"/>
+      </processor>
+      <param name="dir">
+         <attr name="attr">
+            <doc/>
+         </attr>
+      </param>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="src">
+         <part string="@dir.attr"/>
+         <separator string="/"/>
+         <part string="src/a"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="out">
+         <part string="@dir.attr"/>
+         <separator string="/"/>
+         <part string="out/a"/>
+      </processor>
+      <block name="test-clone-analysis" spec="com.mpdeimos.ct_tests.TestCloneAnalysis">
+         <database filename="@db"/>
+         <src path="@src"/>
+         <out path="@out"/>
+         <revision folder="r1"/>
+      </block>
+      <block condition="@test-clone-analysis.output" name="test-clone-analysis2" spec="com.mpdeimos.ct_tests.TestCloneAnalysis">
+         <database filename="@db"/>
+         <src path="@src"/>
+         <out path="@out"/>
+         <revision folder="r2"/>
+      </block>
+      <block condition="@test-clone-analysis2.output" name="test-clone-analysis22" spec="com.mpdeimos.ct_tests.TestCloneAnalysis">
+         <database filename="@db"/>
+         <src path="@src"/>
+         <out path="@out"/>
+         <revision folder="r3"/>
+      </block>
+      <block condition="@test-clone-analysis22.output" name="test-clone-analysis3" spec="com.mpdeimos.ct_tests.TestCloneAnalysis">
+         <database filename="@db"/>
+         <src path="@src"/>
+         <out path="@out"/>
+         <revision folder="r4"/>
+      </block>
+      <block condition="@test-clone-analysis3.output" name="test-clone-analysis23" spec="com.mpdeimos.ct_tests.TestCloneAnalysis">
+         <database filename="@db"/>
+         <src path="@src"/>
+         <out path="@out"/>
+         <revision folder="r5"/>
+      </block>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="db">
+         <entry key="pos" value="432,60"/>
+         <entry key="edges_invisible" value="true"/>
+      </entries>
+      <entries namespace="dir">
+         <entry key="pos" value="276,0"/>
+      </entries>
+      <entries namespace="src">
+         <entry key="pos" value="48,60"/>
+         <entry key="edges_invisible" value="true"/>
+      </entries>
+      <entries namespace="out">
+         <entry key="pos" value="240,60"/>
+         <entry key="edges_invisible" value="true"/>
+      </entries>
+      <entries namespace="#comments">
+         <entry key="comment_1317669835335" value="Revision 1&#10;"/>
+         <entry key="comment_1317674329169" value="Revision 2"/>
+         <entry key="comment_1317674332078" value="Revision 3&#10;&#10;"/>
+         <entry key="comment_1318195328032" value="Revision 5&#10;"/>
+         <entry key="comment_1318195328037" value="Revision 4&#10;"/>
+      </entries>
+      <entries namespace="#comment-bounds">
+         <entry key="comment_1317669835335" value="48,132,73,25"/>
+         <entry key="comment_1317674329169" value="240,132,73,25"/>
+         <entry key="comment_1317674332078" value="432,132,73,25"/>
+         <entry key="comment_1318195328032" value="252,252,73,25"/>
+         <entry key="comment_1318195328037" value="60,252,73,25"/>
+      </entries>
+      <entries namespace="test-clone-analysis">
+         <entry key="pos" value="48,168"/>
+      </entries>
+      <entries namespace="test-clone-analysis2">
+         <entry key="pos" value="240,168"/>
+      </entries>
+      <entries namespace="test-clone-analysis22">
+         <entry key="pos" value="432,168"/>
+      </entries>
+      <entries namespace="test-clone-analysis3">
+         <entry key="pos" value="60,288"/>
+      </entries>
+      <entries namespace="test-clone-analysis23">
+         <entry key="pos" value="252,288"/>
+      </entries>
+   </meta>
+</conqat>

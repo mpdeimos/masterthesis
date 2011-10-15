@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.VCSDataReader">
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="concatenator2">
+         <part string="@dir.path"/>
+         <separator string="/"/>
+         <part string="vcs.data"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.input.PropertiesFileReader" name="properties-file-reader2">
+         <file name="@concatenator2"/>
+         <key name="date"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.input.PropertiesFileReader" name="properties-file-reader3">
+         <file name="@concatenator2"/>
+         <key name="revision"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.input.PropertiesFileReader" name="properties-file-reader">
+         <file name="@concatenator2"/>
+         <key name="message"/>
+      </processor>
+      <param name="dir">
+         <attr name="path"/>
+      </param>
+      <out name="revision" ref="@properties-file-reader3"/>
+      <out name="message" ref="@properties-file-reader"/>
+      <out name="date" ref="@properties-file-reader2"/>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="concatenator2">
+         <entry key="pos" value="239,194"/>
+      </entries>
+      <entries namespace="properties-file-reader2">
+         <entry key="pos" value="24,288"/>
+      </entries>
+      <entries namespace="properties-file-reader3">
+         <entry key="pos" value="239,285"/>
+      </entries>
+      <entries namespace="properties-file-reader">
+         <entry key="pos" value="426,285"/>
+      </entries>
+      <entries namespace="dir">
+         <entry key="pos" value="288,120"/>
+      </entries>
+      <entries namespace="revision">
+         <entry key="pos" value="288,372"/>
+      </entries>
+      <entries namespace="message">
+         <entry key="pos" value="456,372"/>
+      </entries>
+      <entries namespace="date">
+         <entry key="pos" value="108,456"/>
+      </entries>
+   </meta>
+</conqat>

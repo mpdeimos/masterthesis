@@ -1,0 +1,261 @@
+/*-------------------------------------------------------------------------+
+|                                                                          |
+| Copyright 2005-2011 The ConQAT Project                                   |
+|                                                                          |
+| Licensed under the Apache License, Version 2.0 (the "License");          |
+| you may not use this file except in compliance with the License.         |
+| You may obtain a copy of the License at                                  |
+|                                                                          |
+|    http://www.apache.org/licenses/LICENSE-2.0                            |
+|                                                                          |
+| Unless required by applicable law or agreed to in writing, software      |
+| distributed under the License is distributed on an "AS IS" BASIS,        |
+| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. |
+| See the License for the specific language governing permissions and      |
+| limitations under the License.                                           |
++-------------------------------------------------------------------------*/
+package org.conqat.engine.clone_tracking;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.conqat.engine.resource.text.ITextElement;
+import org.conqat.engine.resource.text.ITextResource;
+import org.conqat.engine.resource.text.TextElementUtils;
+import org.conqat.engine.resource.util.ResourceTraversalUtils;
+
+import org.conqat.lib.commons.algo.Diff;
+import org.conqat.lib.commons.collections.IIdProvider;
+import org.conqat.lib.commons.collections.IdComparator;
+import org.conqat.lib.commons.string.StringUtils;
+import org.conqat.engine.commons.ConQATParamDoc;
+import org.conqat.engine.commons.ConQATProcessorBase;
+import org.conqat.engine.commons.date.DateDef;
+import org.conqat.engine.commons.node.IConQATNode;
+import org.conqat.engine.commons.node.ListNode;
+import org.conqat.engine.commons.node.NodeConstants;
+import org.conqat.engine.commons.node.NodeUtils;
+import org.conqat.engine.core.core.AConQATAttribute;
+import org.conqat.engine.core.core.AConQATParameter;
+import org.conqat.engine.core.core.AConQATProcessor;
+import org.conqat.engine.core.core.ConQATException;
+import org.conqat.engine.resource.analysis.LOCAnalyzer;
+
+/**
+ * {@ConQAT.Doc}
+ * 
+ * @author juergens
+ * @author $Author$
+ * @version $Rev$
+ * @levd.rating RED Hash: 3BEC94CE56DB48AB51A935EE25F79144
+ */
+@AConQATProcessor(description = "Counts the number of changed files between system versions. "
+		+ "Useful to get an understanding of system activity for repository analyses."
+		+ "System version directories are expected as direct subdirectories of the root directory."
+		+ "The output is a rooted list containing the names of the system version folders and the "
+		+ "number of changed files")
+public class ChangedFilesCounter extends ConQATProcessorBase {
+
+	/** Parameter object */
+	public class Churn {
+
+		/** Number of files that were not found between versions */
+		public final int modifiedFiles;
+
+		/** Number of files that were found between versions but changed */
+		public final int addedRemovedFiles;
+
+		/** Loc of files that were not found between versions */
+		public final int addedRemovedLines;
+
+		/** Loc of files that were modified between versions */
+		public final int modifiedLines;
+
+		/** Constructor */
+		public Churn(int addedRemovedFiles, int modifiedFiles,
+				int addedRemovedLines, int modifiedLines) {
+			this.modifiedFiles = modifiedFiles;
+			this.addedRemovedFiles = addedRemovedFiles;
+			this.addedRemovedLines = addedRemovedLines;
+			this.modifiedLines = modifiedLines;
+		}
+
+	}
+
+	/** Key in which number of added/removed files is stored */
+	public static final String FILES_ADDEDREMOVED_KEY = "added/removed files";
+
+	/** Key in which number of changed files is stored */
+	public static final String FILES_MODIFIED_KEY = "modified files";
+
+	/** Key in which date of result is stored */
+	public static final String DATE_KEY = "date";
+
+	/** Key in which added/removed loc are stored */
+	public static final String LOC_ADDEDREMOVED_KEY = "added/removed loc";
+
+	/** Key in which modified loc are stored */
+	public static final String LOC_MODIFIED_KEY = "changed loc";
+
+	/** Root node of system version tree */
+	private ITextResource root;
+
+	/** {@ConQAT.Doc} */
+	@AConQATParameter(name = ConQATParamDoc.INPUT_NAME, description = ConQATParamDoc.INPUT_DESC, minOccurrences = 1, maxOccurrences = 1)
+	public void setRoot(
+			@AConQATAttribute(name = ConQATParamDoc.INPUT_REF_NAME, description = ConQATParamDoc.INPUT_REF_DESC) ITextResource root) {
+		this.root = root;
+	}
+
+	/** {@inheritDoc} */
+	public ListNode process() throws ConQATException {
+		ArrayList<ITextResource> snapshotFolders = new ArrayList<ITextResource>();
+		snapshotFolders.addAll(Arrays.asList(root.getChildren()));
+		Collections.sort(snapshotFolders, new IdComparator<String, Object>(
+				new ConQATNodeIdProvider()));
+
+		ListNode root = new ListNode("Result");
+		NodeUtils.addToDisplayList(root, FILES_ADDEDREMOVED_KEY,
+				FILES_MODIFIED_KEY, LOC_ADDEDREMOVED_KEY, LOC_MODIFIED_KEY,
+				LOCAnalyzer.KEY, DATE_KEY);
+		root.setValue(NodeConstants.HIDE_ROOT, true);
+
+		int firstLocCount = countLoc(snapshotFolders.get(0));
+		createSnapshotNode(root, new Churn(0, 0, 0, 0), firstLocCount,
+				snapshotFolders.get(0).getName());
+
+		for (int i = 0; i < snapshotFolders.size() - 1; i++) {
+			ITextResource oldSnapshot = snapshotFolders.get(i);
+			ITextResource newSnapshot = snapshotFolders.get(i + 1);
+			Churn churn = countChangedFiles(oldSnapshot, newSnapshot);
+			int locCountNew = countLoc(newSnapshot);
+			String name = newSnapshot.getName();
+			createSnapshotNode(root, churn, locCountNew, name);
+		}
+
+		return root;
+	}
+
+	// TODO (EJ) Consolidate redundancy with NodeTestUtils
+	/** Simple id provider for ConQAT nodes. */
+	public static class ConQATNodeIdProvider implements
+			IIdProvider<String, Object> {
+		/** Returns id for ConQAT nodes, throws an exception for other nodes. */
+		public String obtainId(Object node) {
+			if (!(node instanceof IConQATNode)) {
+				throw new RuntimeException(
+						"ID provider works for ConQATNodes only.");
+			}
+			return ((IConQATNode) node).getId();
+		}
+
+	}
+
+	/**
+	 * Creates a node carrying the results for a shapshot
+	 * 
+	 * @throws ConQATException
+	 */
+	private void createSnapshotNode(ListNode root, Churn churn,
+			int locCountNew, String name) throws ConQATException {
+		ListNode folderNode = new ListNode(name);
+		root.addChild(folderNode);
+		folderNode.setValue(FILES_ADDEDREMOVED_KEY, churn.addedRemovedFiles);
+		folderNode.setValue(FILES_MODIFIED_KEY, churn.modifiedFiles);
+		folderNode.setValue(LOC_ADDEDREMOVED_KEY, churn.addedRemovedLines);
+		folderNode.setValue(LOC_MODIFIED_KEY, churn.modifiedLines);
+		folderNode.setValue(LOCAnalyzer.KEY, locCountNew);
+
+		DateDef dateDef = new DateDef();
+		dateDef.setDate(name.replaceAll("-", ""), "yyyyMMdd");
+		dateDef.init(getProcessorInfo());
+		Date date = dateDef.process();
+
+		folderNode.setValue(DATE_KEY, date);
+	}
+
+	/**
+	 * Count number of files from new snapshot that could not be found in old
+	 * system.
+	 */
+	private Churn countChangedFiles(ITextResource oldSnapshot,
+			ITextResource newSnapshot) throws ConQATException {
+
+		Map<String, ITextElement> oldElements = createUniformPathToElementMap(oldSnapshot);
+
+		int addedRemovedFiles = 0;
+		int modifiedFiles = 0;
+
+		int addedRemovedLines = 0;
+		int modifiedLines = 0;
+
+		for (ITextElement newElement : ResourceTraversalUtils
+				.listTextElements(newSnapshot)) {
+
+			String newContent = newElement.getTextContent();
+			String[] newLines = TextElementUtils.getLines(newElement);
+
+			ITextElement oldElement = oldElements.get(newElement
+					.getUniformPath());
+
+			if (oldElement != null) {
+				String oldContent = oldElement.getTextContent();
+				if (!newContent.equals(oldContent)) {
+					String[] oldLines = StringUtils.splitLines(oldContent);
+					int deltaSize = Diff.computeDelta(newLines, oldLines)
+							.getSize();
+					modifiedLines += deltaSize;
+					modifiedFiles += 1;
+
+					double changeRatio = (double) deltaSize / newLines.length;
+					boolean largeModification = changeRatio > 0.5;
+					if (largeModification) {
+						getLogger().info(
+								"Changed " + changeRatio + " of file: "
+										+ newElement.getLocation());
+					}
+				}
+			} else {
+				getLogger().info(
+						"File no longer found: " + newElement.getLocation());
+				addedRemovedFiles += 1;
+				addedRemovedLines += newLines.length;
+			}
+
+		}
+
+		return new Churn(addedRemovedFiles, modifiedFiles, addedRemovedLines,
+				modifiedLines);
+	}
+
+	// TODO (EJ) Make generic and move into utils
+	/** Create mapping from uniform paths to elements */
+	private Map<String, ITextElement> createUniformPathToElementMap(
+			ITextResource root) {
+		Map<String, ITextElement> map = new HashMap<String, ITextElement>();
+
+		for (ITextElement element : ResourceTraversalUtils
+				.listTextElements(root)) {
+			map.put(element.getUniformPath(), element);
+		}
+
+		return map;
+	}
+
+	/** Counts the lines of code located in the folder */
+	private int countLoc(ITextResource rootFolder) throws ConQATException {
+		int locs = 0;
+		List<ITextElement> files = ResourceTraversalUtils
+				.listTextElements(rootFolder);
+		for (ITextElement file : files) {
+			locs += TextElementUtils.countLOC(file);
+		}
+		return locs;
+	}
+
+}

@@ -1,0 +1,201 @@
+/*-------------------------------------------------------------------------+
+|                                                                          |
+| Copyright 2005-2011 The ConQAT Project                                   |
+|                                                                          |
+| Licensed under the Apache License, Version 2.0 (the "License");          |
+| you may not use this file except in compliance with the License.         |
+| You may obtain a copy of the License at                                  |
+|                                                                          |
+|    http://www.apache.org/licenses/LICENSE-2.0                            |
+|                                                                          |
+| Unless required by applicable law or agreed to in writing, software      |
+| distributed under the License is distributed on an "AS IS" BASIS,        |
+| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. |
+| See the License for the specific language governing permissions and      |
+| limitations under the License.                                           |
++-------------------------------------------------------------------------*/
+package org.conqat.engine.clone_tracking;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import org.conqat.lib.commons.collections.CollectionUtils;
+import org.conqat.lib.commons.collections.CounterSet;
+import org.conqat.lib.commons.filesystem.FileSystemUtils;
+import org.conqat.lib.commons.string.StringUtils;
+import org.conqat.engine.code_clones.core.CloneClass;
+import org.conqat.engine.code_clones.core.CloneClassList;
+import org.conqat.engine.code_clones.core.utils.CloneUtils;
+import org.conqat.engine.code_clones.core.utils.ECloneClassChange;
+import org.conqat.engine.code_clones.detection.CloneDetectionResultElement;
+import org.conqat.engine.commons.ConQATParamDoc;
+import org.conqat.engine.commons.ConQATProcessorBase;
+import org.conqat.engine.commons.node.ListNode;
+import org.conqat.engine.commons.node.NodeUtils;
+import org.conqat.engine.core.core.AConQATAttribute;
+import org.conqat.engine.core.core.AConQATKey;
+import org.conqat.engine.core.core.AConQATParameter;
+import org.conqat.engine.core.core.AConQATProcessor;
+import org.conqat.engine.core.core.ConQATException;
+
+/**
+ * {@ConQAT.Doc}
+ * 
+ * @author juergens
+ * @author $Author$
+ * @version $Rev$
+ * @levd.rating RED Hash: BF388E1AA3160B7A39CF8B3392C55FA4
+ */
+@AConQATProcessor(description = "Assesses the type of change of tracked clones")
+public class TrackingClassifier extends ConQATProcessorBase {
+
+	/** Key used to store counts */
+	private static final String COUNT = "Count";
+
+	/** {@ConQAT.Doc} */
+	@AConQATKey(description = "Consistent change", type = "java.lang.Integer")
+	public static final String CONSISTENT_CHANGES = "#cons";
+
+	/** {@ConQAT.Doc} */
+	@AConQATKey(description = "Inconsistent change", type = "java.lang.Integer")
+	public static final String INCONSISTENT_CHANGES = "#incons";
+
+	/** File to write results to */
+	private File ouputDir;
+
+	/** Collection of clone detection results */
+	private final Collection<List<CloneClass>> cloneClassLists = new ArrayList<List<CloneClass>>();
+
+	/** {@ConQAT.Doc} */
+	@AConQATParameter(name = "detectionresult", description = "Clone detection result", minOccurrences = 1, maxOccurrences = 1)
+	public void setNewDetectionResult(
+			@AConQATAttribute(name = "new", description = "Clone detection result") CloneDetectionResultElement detectionResult) {
+		cloneClassLists.add(detectionResult.getList());
+	}
+
+	/** {@ConQAT.Doc} */
+	@AConQATParameter(name = "output", description = "Output directory", minOccurrences = 1, maxOccurrences = 1)
+	public void setTargetFile(
+			@AConQATAttribute(name = "dir", description = "Directory into which result files are written") String outputDirName) {
+		ouputDir = new File(outputDirName);
+	}
+
+	/** ConQAT Parameter */
+	@AConQATParameter(name = ConQATParamDoc.INPUT_NAME, description = ConQATParamDoc.INPUT_DESC, minOccurrences = 1, maxOccurrences = 1)
+	public void setResult(
+			@AConQATAttribute(name = ConQATParamDoc.INPUT_REF_NAME, description = ConQATParamDoc.INPUT_REF_DESC) CloneClassList cloneClasses) {
+		cloneClassLists.add(cloneClasses);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @throws ConQATException
+	 *             if target file cannot be written
+	 */
+	public ListNode process() throws ConQATException {
+		CounterSet<ECloneClassChange> changeCounts = countChanges();
+
+		writeTargetFile(changeCounts);
+
+		writeDistroFile(distChanges(ECloneClassChange.CONSISTENT), new File(
+				ouputDir, "consistent.txt"));
+		writeDistroFile(distChanges(ECloneClassChange.INCONSISTENT), new File(
+				ouputDir, "inconsistent.txt"));
+
+		return createRootedList(changeCounts);
+	}
+
+	/** Count change types into {@link CounterSet} */
+	private CounterSet<ECloneClassChange> countChanges() {
+		CounterSet<ECloneClassChange> changeCounts = new CounterSet<ECloneClassChange>();
+
+		for (List<CloneClass> cloneClasses : cloneClassLists) {
+			for (CloneClass cloneClass : cloneClasses) {
+				for (ECloneClassChange changeType : ECloneClassChange.values()) {
+					int count = CloneUtils.getChangeTypeCounter(cloneClass,
+							changeType);
+					changeCounts.inc(changeType, count);
+				}
+			}
+		}
+
+		return changeCounts;
+	}
+
+	/** Write results to file in CSV format */
+	private void writeTargetFile(CounterSet<ECloneClassChange> changeCounts)
+			throws ConQATException {
+		StringBuilder content = new StringBuilder();
+		String separator = ";";
+
+		// write header
+		content.append(StringUtils
+				.concat(ECloneClassChange.values(), separator));
+		content.append(StringUtils.CR);
+
+		// write values
+		List<Integer> counts = new ArrayList<Integer>();
+		for (ECloneClassChange change : ECloneClassChange.values()) {
+			counts.add(changeCounts.getValue(change));
+		}
+		content.append(StringUtils.concat(counts, separator));
+		content.append(StringUtils.CR);
+
+		try {
+			File targetFile = new File(ouputDir, "changes.txt");
+			FileSystemUtils.writeFile(targetFile, content.toString());
+		} catch (IOException e) {
+			throw new ConQATException("Could not write target file: ", e);
+		}
+	}
+
+	/** Create {@link CounterSet} with counts of changes per length */
+	private CounterSet<Integer> distChanges(ECloneClassChange changeType) {
+		CounterSet<Integer> lengths = new CounterSet<Integer>();
+
+		for (List<CloneClass> cloneClasses : cloneClassLists) {
+			for (CloneClass cloneClass : cloneClasses) {
+				int count = CloneUtils.getChangeTypeCounter(cloneClass,
+						changeType);
+				lengths.inc(cloneClass.getNormalizedLength(), count);
+			}
+		}
+
+		return lengths;
+	}
+
+	/** Write distribution of consistent changes to file */
+	private void writeDistroFile(CounterSet<Integer> consistentChangeDistro,
+			File file) throws ConQATException {
+		StringBuilder content = new StringBuilder();
+		for (Integer length : CollectionUtils.sort(consistentChangeDistro
+				.getKeys())) {
+			content.append(length + ":"
+					+ consistentChangeDistro.getValue(length) + StringUtils.CR);
+		}
+
+		try {
+			FileSystemUtils.writeFile(file, content.toString());
+		} catch (IOException e) {
+			throw new ConQATException("Could not write distribution file: ", e);
+		}
+	}
+
+	/** Create rooted list of change types */
+	private ListNode createRootedList(CounterSet<ECloneClassChange> changeCounts) {
+		ListNode root = new ListNode();
+		NodeUtils.addToDisplayList(root, COUNT);
+
+		// create list
+		for (ECloneClassChange change : ECloneClassChange.values()) {
+			ListNode leaf = new ListNode(change.toString());
+			leaf.setValue(COUNT, changeCounts.getValue(change));
+			root.addChild(leaf);
+		}
+		return root;
+	}
+}

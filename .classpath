@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/org.conqat.engine.core/lib/ccsm-commons.jar" sourcepath="/ccsm-commons"/>
+	<classpathentry kind="lib" path="/org.conqat.engine.core/lib/junit.jar"/>
+	<classpathentry kind="lib" path="/org.conqat.engine.sourcecode/lib/scanner.jar" sourcepath="/scanner"/>
+	<classpathentry kind="lib" path="lib/commons-collections.jar"/>
+	<classpathentry kind="src" path="/org.conqat.engine.core"/>
+	<classpathentry kind="src" path="/org.conqat.engine.commons"/>
+	<classpathentry kind="src" path="/org.conqat.engine.sourcecode"/>
+	<classpathentry kind="src" path="/org.conqat.engine.code_clones"/>
+	<classpathentry kind="src" path="/org.conqat.engine.resource"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.html_presentation"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.persistence"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.graph"/>
+	<classpathentry kind="src" path="/org.conqat.engine.dotnet"/>
+	<classpathentry kind="src" path="/org.conqat.engine.text"/>
+	<classpathentry kind="lib" path="/org.conqat.engine.html_presentation/lib/jfree-commons.jar"/>
+	<classpathentry kind="lib" path="/org.conqat.engine.html_presentation/lib/jfreechart.jar" sourcepath="/ccsm-libs/sources/jfreechart.zip"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.abap"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.architecture"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.blocklib"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.bugzilla"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.ccsm"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.clone_tracking"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.codesearch"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.cpp"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.finding_tracking"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.incubator"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.io"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.java"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.levd"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.matching"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.model_clones"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.msr_presentation"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.php"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.recommender"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.releng"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.report"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.scripting"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.self"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.server"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.simion"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.simulink"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.svn"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.systemtest"/>
+	<classpathentry kind="output" path="classes"/>
+</classpath>

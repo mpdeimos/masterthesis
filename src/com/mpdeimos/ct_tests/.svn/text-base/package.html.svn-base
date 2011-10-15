@@ -1,0 +1,11 @@
+<!--  
+  $Id$
+  @version $Rev$
+  @levd.rating YELLOW Hash: 399D504686BECA9DE5EACA9EE1719CA7 
+-->
+<body>
+
+This package contains classes that perform clone tracing, 
+i.e. mapping between clones detected on different system versions.
+
+</body>

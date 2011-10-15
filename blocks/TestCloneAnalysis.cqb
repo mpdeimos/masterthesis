@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.TestCloneAnalysis">
+      <processor class="com.mpdeimos.ct_tests.processors.AlwaysTrueCondition" name="always-true-condition">
+         <input param="@parameters-present-condition"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="c-src">
+         <part string="@src.path"/>
+         <separator string="/"/>
+         <part string="@concatenator"/>
+      </processor>
+      <block name="java-clone-tracking" spec="com.mpdeimos.ct_tests.tracking.JavaCloneTrackingCP">
+         <clone minlength="7"/>
+         <input dir="@c-src" project="Test Project"/>
+         <output dir="@c-out"/>
+         <database filename="@database.filename"/>
+         <system date-object="@vcs-latest-date-extractor" name=""/>
+         <vcs commits="@vcs-data-reader"/>
+      </block>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="c-out">
+         <part string="@out.path"/>
+         <separator string="/"/>
+         <part string="@concatenator"/>
+      </processor>
+      <param name="src">
+         <attr name="path"/>
+      </param>
+      <param name="database">
+         <attr name="filename"/>
+      </param>
+      <out name="output" ref="@always-true-condition"/>
+      <param name="out">
+         <attr name="path"/>
+      </param>
+      <param name="revision">
+         <attr name="folder"/>
+      </param>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="concatenator">
+         <part string="@revision.folder"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.bool.ParametersPresentCondition" name="parameters-present-condition">
+         <input value="@java-clone-tracking.*"/>
+      </processor>
+      <processor class="com.mpdeimos.ct_tests.processors.VCSDataReader" name="vcs-data-reader">
+         <file name="@concatenator2"/>
+      </processor>
+      <processor class="com.mpdeimos.ct_tests.processors.VCSLatestDateExtractor" name="vcs-latest-date-extractor">
+         <commits ref="@vcs-data-reader"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="concatenator2">
+         <part string="@c-src"/>
+         <separator string="/"/>
+         <part string="vcs.data"/>
+      </processor>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="always-true-condition">
+         <entry key="pos" value="480,480"/>
+      </entries>
+      <entries namespace="c-src">
+         <entry key="pos" value="468,168"/>
+      </entries>
+      <entries namespace="java-clone-tracking">
+         <entry key="pos" value="480,312"/>
+      </entries>
+      <entries namespace="c-out">
+         <entry key="pos" value="468,228"/>
+      </entries>
+      <entries namespace="output">
+         <entry key="pos" value="516,552"/>
+      </entries>
+      <entries namespace="src">
+         <entry key="pos" value="392,44"/>
+      </entries>
+      <entries namespace="database">
+         <entry key="pos" value="512,44"/>
+      </entries>
+      <entries namespace="out">
+         <entry key="pos" value="620,44"/>
+      </entries>
+      <entries namespace="revision">
+         <entry key="pos" value="732,48"/>
+      </entries>
+      <entries namespace="concatenator">
+         <entry key="pos" value="684,168"/>
+      </entries>
+      <entries namespace="parameters-present-condition">
+         <entry key="pos" value="480,396"/>
+      </entries>
+      <entries namespace="vcs-data-reader">
+         <entry key="pos" value="240,240"/>
+      </entries>
+      <entries namespace="vcs-latest-date-extractor">
+         <entry key="pos" value="240,312"/>
+      </entries>
+      <entries namespace="concatenator2">
+         <entry key="pos" value="240,180"/>
+      </entries>
+   </meta>
+</conqat>
