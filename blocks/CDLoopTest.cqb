@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+	$Id: $$
+	$Rev: 12646 $
+	@levd.rating YELLOW Rev: 11033
+-->
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.CDLoopTest">
+      <block name="cd-loop" spec="com.mpdeimos.ct_tests.CDLoop">
+         <flags traditional-clone-detection="@flags.traditional-clone-detection"/>
+         <dir is-git="@dir.is-git" out="@dir.out" src="@dir.src"/>
+         <limit end="@limit.end" start="@limit.start"/>
+         <clone minlength="@clone.minlength"/>
+      </block>
+      <param name="dir">
+         <attr name="src">
+            <doc/>
+         </attr>
+         <attr name="out"/>
+         <attr name="is-git"/>
+      </param>
+      <param name="flags">
+         <attr name="traditional-clone-detection"/>
+      </param>
+      <processor class="com.mpdeimos.ct_tests.processors.CloneDetectionResultPicker" name="clone-detection-result-picker">
+         <list index="@integer-defaults-processor" ref="@cd-loop.report"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="group-id">
+         <part string="Clone Churn [since "/>
+         <part string="@clone-detection-result-date-extractor2"/>
+         <part string="]"/>
+      </processor>
+      <block name="clone-churn-output" spec="org.conqat.engine.ccsm.clonedetective.tracking.CloneChurnOutput">
+         <info groupId="@group-id"/>
+         <added-clones ref="@clone-churn.added-clones"/>
+         <removed-clones ref="@clone-churn.removed-clones"/>
+         <consistently-modified-clones ref="@clone-churn.consistently-modified-clones"/>
+         <inconsistently-modified-clones ref="@clone-churn.inconsistently-modified-clones"/>
+         <output dir="@dir.out"/>
+      </block>
+      <block name="clone-churn" spec="org.conqat.engine.ccsm.clonedetective.tracking.CloneChurn">
+         <baseline date="@clone-detection-result-date-extractor2"/>
+         <tracked clones="@clone-detection-result-picker"/>
+         <database space="@cd-loop.database"/>
+      </block>
+      <processor class="com.mpdeimos.ct_tests.processors.CloneDetectionResultPicker" name="clone-detection-result-picker2">
+         <list index="@integer-defaults-processor2" ref="@cd-loop.report"/>
+      </processor>
+      <processor class="com.mpdeimos.ct_tests.processors.CloneDetectionResultDateExtractor" name="clone-detection-result-date-extractor2">
+         <clone report="@clone-detection-result-picker2"/>
+      </processor>
+      <param name="limit">
+         <attr name="start"/>
+         <attr name="end"/>
+      </param>
+      <param name="eval">
+         <attr name="result"/>
+         <attr name="reference"/>
+      </param>
+      <processor class="org.conqat.engine.commons.defaults.IntegerDefaultsProcessor" name="integer-defaults-processor">
+         <default value="-1"/>
+         <actual value="@eval.result"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.defaults.IntegerDefaultsProcessor" name="integer-defaults-processor2">
+         <default value="-2"/>
+         <actual value="@eval.reference"/>
+      </processor>
+      <processor class="org.conqat.engine.clone_tracking.TrackingClassifier" name="tracking-classifier">
+         <detectionresult new="@clone-detection-result-picker"/>
+         <input ref="@clone-churn.removed-clones"/>
+         <output dir="@dir.out"/>
+      </processor>
+      <processor class="org.conqat.engine.code_clones.result.CloneReportWriterProcessor" name="clone-report-writer-processor">
+         <output dir="@dir.out" report-name="clones-tracked.xml"/>
+         <detection-result ref="@clone-detection-result-picker"/>
+      </processor>
+      <param name="clone">
+         <attr name="minlength"/>
+      </param>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="cd-loop">
+         <entry key="pos" value="264,144"/>
+      </entries>
+      <entries namespace="dir">
+         <entry key="pos" value="252,60"/>
+         <entry key="edges_invisible" value="false"/>
+      </entries>
+      <entries namespace="flags">
+         <entry key="pos" value="408,60"/>
+         <entry key="edges_invisible" value="false"/>
+      </entries>
+      <entries namespace="clone-detection-result-picker">
+         <entry key="pos" value="264,240"/>
+      </entries>
+      <entries namespace="group-id">
+         <entry key="pos" value="36,372"/>
+      </entries>
+      <entries namespace="clone-churn-output">
+         <entry key="pos" value="264,432"/>
+      </entries>
+      <entries namespace="clone-churn">
+         <entry key="pos" value="264,360"/>
+      </entries>
+      <entries namespace="clone-detection-result-picker2">
+         <entry key="pos" value="36,240"/>
+      </entries>
+      <entries namespace="clone-detection-result-date-extractor2">
+         <entry key="pos" value="36,300"/>
+      </entries>
+      <entries namespace="limit">
+         <entry key="pos" value="540,60"/>
+      </entries>
+      <entries namespace="eval">
+         <entry key="pos" value="72,60"/>
+      </entries>
+      <entries namespace="integer-defaults-processor">
+         <entry key="pos" value="72,144"/>
+      </entries>
+      <entries namespace="integer-defaults-processor2">
+         <entry key="pos" value="-120,144"/>
+      </entries>
+      <entries namespace="tracking-classifier">
+         <entry key="pos" value="456,504"/>
+      </entries>
+      <entries namespace="clone-report-writer-processor">
+         <entry key="pos" value="48,504"/>
+      </entries>
+      <entries namespace="clone">
+         <entry key="pos" value="-72,60"/>
+      </entries>
+   </meta>
+</conqat>

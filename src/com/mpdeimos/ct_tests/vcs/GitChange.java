@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------+
 |                                                                          |
-| Copyright 2005-2011 The ConQAT Project                                   |
+| Copyright 2005-2011 the ConQAT Project                                   |
 |                                                                          |
 | Licensed under the Apache License, Version 2.0 (the "License");          |
 | you may not use this file except in compliance with the License.         |
@@ -14,33 +14,41 @@
 | See the License for the specific language governing permissions and      |
 | limitations under the License.                                           |
 +-------------------------------------------------------------------------*/
-package com.mpdeimos.ct_tests.processors;
+package com.mpdeimos.ct_tests.vcs;
 
-import org.conqat.engine.commons.ConQATProcessorBase;
-import org.conqat.engine.core.core.AConQATAttribute;
-import org.conqat.engine.core.core.AConQATParameter;
-import org.conqat.engine.core.core.AConQATProcessor;
+import java.util.Collection;
+
+import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.revwalk.RevCommit;
 
 /**
- * {@ConQAT.Doc}
  * 
- * @author $Author: juergens $
- * @version $Rev: 35532 $
- * @ConQAT.Rating YELLOW Hash: FD23B6FC74A53ECF8C80824F88E2D3ED
+ * @author $Author: $
+ * @version $Rev: $
+ * @ConQAT.Rating RED Hash:
  */
-@AConQATProcessor(description = "Returns always true.")
-public class AlwaysTrueCondition extends ConQATProcessorBase {
+public class GitChange {
 
-	/** {@ConQAT.Doc} */
-	@AConQATParameter(name = "input", minOccurrences = 0, description = "Some parameters.")
-	public void addValue(
-			@SuppressWarnings("unused") @AConQATAttribute(name = "param", description = "Parameter to ignore") Object param) {
-		// nothing to do
+	private final RevCommit commit;
+	private final Collection<DiffEntry> diffs;
+
+	/**
+	 * @param commit
+	 * @param diffs
+	 */
+	public GitChange(RevCommit commit, Collection<DiffEntry> diffs) {
+		this.commit = commit;
+		this.diffs = diffs;
 	}
 
-	/** {@inheritDoc} */
-	@Override
-	public Boolean process() {
-		return true;
+	/** Returns commit. */
+	public RevCommit getCommit() {
+		return commit;
 	}
+
+	/** Returns diffs. */
+	public Collection<DiffEntry> getDiffs() {
+		return diffs;
+	}
+	
 }

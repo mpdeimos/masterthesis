@@ -1,0 +1,5 @@
+#!com.mpdeimos.ct_tests.CDLoop
+flags.traditional-clone-detection=false
+dir.is-git=false
+dir.src=/home/mpdeimos/workspaces/cq/ct_data/src/a
+dir.out=/home/mpdeimos/workspaces/cq/ct_data/out/a

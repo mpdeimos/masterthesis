@@ -1,0 +1,30 @@
+<!--  
+  $Id: package.html 22545 2009-07-29 09:38:34Z juergens $
+  @version $Rev: 22545 $
+  @levd.rating YELLOW Hash: 3E49ECB728D01D1024DA939961955595 
+-->
+<body>
+
+This package contains a data driven clone tracing test framework.
+Every folder in this package's test data directory contains a tracing scenario.
+The name of the folder denotes the tracing scenario. 
+The folder "add_subclone" for example tests a scenario where a part of an existing clone is again cloned.
+<br/><br/>
+Every tracing scenario folder contains <b>system version subfolders</b>. Every system version subfolder has all the code at a specific version.
+System folder names must depict the date they represent following the pattern "yyyyMMdd". 
+<br/><br/>
+The expected clone tracing outcome is depicted in the file named <b>expectedresult.txt</b> in the tracing scenario folder.
+<br/><br/>
+
+Each line in the expectedresult file depicts a specific clone classes set. The string before the colon depicts
+the clone report that contains the set. The after it denotes expected contained clone classes.
+
+<pre>
+clones-tracked.xml:CC(2), CC(2)
+clones-removed.xml:
+</pre> 
+
+The above snippet for example expects the clones-tracked.xml report to be present and to contain 2 clone classes, each containing 2 clones.
+Furthermore, it expects the clones-removed.xml report to be present, and expects it to be empty.
+
+</body>

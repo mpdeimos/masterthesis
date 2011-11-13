@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------+
 |                                                                          |
-| Copyright 2005-2011 The ConQAT Project                                   |
+| Copyright 2005-2011 the ConQAT Project                                   |
 |                                                                          |
 | Licensed under the Apache License, Version 2.0 (the "License");          |
 | you may not use this file except in compliance with the License.         |
@@ -16,31 +16,52 @@
 +-------------------------------------------------------------------------*/
 package com.mpdeimos.ct_tests.processors;
 
+import java.io.File;
+
 import org.conqat.engine.commons.ConQATProcessorBase;
 import org.conqat.engine.core.core.AConQATAttribute;
 import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
+import org.conqat.engine.core.core.ConQATException;
 
 /**
- * {@ConQAT.Doc}
  * 
- * @author $Author: juergens $
- * @version $Rev: 35532 $
- * @ConQAT.Rating YELLOW Hash: FD23B6FC74A53ECF8C80824F88E2D3ED
+ * @author $Author: $
+ * @version $Rev: $
+ * @ConQAT.Rating RED Hash:
  */
-@AConQATProcessor(description = "Returns always true.")
-public class AlwaysTrueCondition extends ConQATProcessorBase {
+@AConQATProcessor(description = "TODO")
+public class DeleteFiles extends ConQATProcessorBase {
 
-	/** {@ConQAT.Doc} */
-	@AConQATParameter(name = "input", minOccurrences = 0, description = "Some parameters.")
-	public void addValue(
-			@SuppressWarnings("unused") @AConQATAttribute(name = "param", description = "Parameter to ignore") Object param) {
-		// nothing to do
+
+
+	private String file;
+	private File path;
+
+
+	@AConQATParameter(name = "delete", minOccurrences = 1, maxOccurrences = 1, description = "TODO")
+	public void setOutput(
+			@AConQATAttribute(name = "path", description = "TODO") String path,
+			@AConQATAttribute(name = "file", description = "TODO") String file
+			) throws ConQATException {
+		this.file = file;
+		this.path = new File(path);
+		if (!this.path.exists() || !this.path.isDirectory())
+			throw new ConQATException(path + " needs to be a directory.");
 	}
-
-	/** {@inheritDoc} */
+	
+	
+	/** {@inheritDoc} 
+	 * @return */
 	@Override
-	public Boolean process() {
-		return true;
+	public Object process()  {
+		for (File f : path.listFiles())
+		{
+			if (f.getName().startsWith(file))
+				f.delete();
+		}
+		
+		return null;
 	}
+
 }

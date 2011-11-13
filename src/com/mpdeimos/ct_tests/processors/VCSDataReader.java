@@ -31,6 +31,7 @@ import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
 import org.conqat.engine.core.core.ConQATException;
 import org.conqat.lib.commons.date.DateUtils;
+import org.conqat.lib.commons.string.StringUtils;
 
 import com.mpdeimos.ct_tests.vcs.Commit;
 
@@ -43,9 +44,6 @@ import com.mpdeimos.ct_tests.vcs.Commit;
 @AConQATProcessor(description = "This process or reads version control system data from a properties file")
 public class VCSDataReader extends ConQATProcessorBase {
 
-	private static final String MESSAGE = "message";
-	private static final String REVISION = "revision";
-	private static final String DATE = "date";
 	/** name of the properties file */
 	private String filename;
 
@@ -65,34 +63,44 @@ public class VCSDataReader extends ConQATProcessorBase {
 	 */
 	@Override
 	public List<Commit> process() throws ConQATException {
-		Properties properties = new Properties();
-
-		try {
-			InputStream inputStream = new FileInputStream(filename);
-			properties.load(inputStream);
-			inputStream.close();
-		} catch (IOException e) {
-			throw new ConQATException("Can't read file: " + filename + "!", e);
-		}
-
-		String message = properties.getProperty(MESSAGE);
-		if (message == null) {
-			throw new ConQATException("Key '" + MESSAGE + "' not found.");
-		}
-		String revision = properties.getProperty(REVISION);
-		if (revision == null) {
-			throw new ConQATException("Key '" + REVISION + "' not found.");
-		}
-		String dateString = properties.getProperty(DATE);
-		if (dateString == null) {
-			throw new ConQATException("Key '" + DATE + "' not found.");
-		}
-		
-		Date date = CommonUtils.parseDate(dateString, "yyyy-MM-dd hh:mm:ss");
+		Commit commit = new Commit(filename);
 		
 		List<Commit> commits = new ArrayList<Commit>(1);
-		commits.add(new Commit(revision, date, message));
+		commits.add(commit);
 		
 		return commits;
 	}
+
+//	public static CommonCommit getCommit(String filename) throws ConQATException {
+//		Properties properties = new Properties();
+//
+//		try {
+//			InputStream inputStream = new FileInputStream(filename);
+//			properties.load(inputStream);
+//			inputStream.close();
+//		} catch (IOException e) {
+//			throw new ConQATException("Can't read file: " + filename + "!", e);
+//		}
+//
+//		String message = properties.getProperty(MESSAGE);
+//		if (message == null) {
+//			throw new ConQATException("Key '" + MESSAGE + "' not found.");
+//		}
+//		String revision = properties.getProperty(REVISION);
+//		if (revision == null) {
+//			throw new ConQATException("Key '" + REVISION + "' not found.");
+//		}
+//		String dateString = properties.getProperty(DATE);
+//		if (dateString == null) {
+//			throw new ConQATException("Key '" + DATE + "' not found.");
+//		}
+//		String added = properties.getProperty(ADDED);
+//		String deleted = properties.getProperty(DELETED);
+//		String modified = properties.getProperty(MODIFIED);
+//		
+//		
+//		Date date = CommonUtils.parseDate(dateString, "yyyy-MM-dd hh:mm:ss");
+//		CommonCommit commit = new CommonCommit(revision, date, message, StringUtils.splitLines(added), StringUtils.splitLines(deleted), StringUtils.splitLines(modified));
+//		return commit;
+//	}
 }

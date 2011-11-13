@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="test-src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/org.conqat.engine.core/lib/ccsm-commons.jar" sourcepath="/ccsm-commons"/>
 	<classpathentry kind="lib" path="/org.conqat.engine.core/lib/junit.jar"/>
@@ -45,5 +46,11 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.simulink"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.svn"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.conqat.engine.systemtest"/>
+	<classpathentry kind="lib" path="lib/org.eclipse.jgit-1.1.0.201109151100-r.jar" sourcepath="/org.eclipse.jgit">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/com.mpdeimos.ct_tests/lib-doc/org.eclipse.jgit-1.1.0.201109151100-r-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/gitective.jar" sourcepath="/org.gitective.core"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

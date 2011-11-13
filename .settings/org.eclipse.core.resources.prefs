@@ -1,7 +1,9 @@
-#Mon Oct 10 01:19:53 CEST 2011
+#Tue Nov 08 21:23:52 CET 2011
 eclipse.preferences.version=1
 encoding//blocks/CD.cqb=UTF-8
 encoding//blocks/CD2.cqb=UTF-8
+encoding//blocks/CDLoop.cqb=UTF-8
+encoding//blocks/CDLoopTest.cqb=UTF-8
 encoding//blocks/TestCloneAnalysis.cqb=UTF-8
 encoding//blocks/VCSDataReader.cqb=UTF-8
 encoding//blocks/tracking/CloneTrackingChainCP.cqb=UTF-8

@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------+
 |                                                                          |
-| Copyright 2005-2011 The ConQAT Project                                   |
+| Copyright 2005-2011 the ConQAT Project                                   |
 |                                                                          |
 | Licensed under the Apache License, Version 2.0 (the "License");          |
 | you may not use this file except in compliance with the License.         |
@@ -14,33 +14,51 @@
 | See the License for the specific language governing permissions and      |
 | limitations under the License.                                           |
 +-------------------------------------------------------------------------*/
-package com.mpdeimos.ct_tests.processors;
+package com.mpdeimos.ct_tests.looper;
 
-import org.conqat.engine.commons.ConQATProcessorBase;
-import org.conqat.engine.core.core.AConQATAttribute;
-import org.conqat.engine.core.core.AConQATParameter;
-import org.conqat.engine.core.core.AConQATProcessor;
+import java.io.File;
+
+import org.conqat.engine.core.core.ConQATException;
+import org.conqat.engine.resource.IContentAccessor;
+import org.conqat.engine.resource.IResource;
+import org.conqat.engine.resource.build.ResourceBuilder;
+import org.conqat.engine.resource.scope.filesystem.FileSystemScope;
+import org.conqat.engine.sourcecode.resource.ITokenResource;
+import org.conqat.engine.sourcecode.resource.TokenResourceSelector;
+
+import com.mpdeimos.ct_tests.vcs.Commit;
 
 /**
- * {@ConQAT.Doc}
  * 
- * @author $Author: juergens $
- * @version $Rev: 35532 $
- * @ConQAT.Rating YELLOW Hash: FD23B6FC74A53ECF8C80824F88E2D3ED
+ * @author $Author: $
+ * @version $Rev: $
+ * @ConQAT.Rating RED Hash:
  */
-@AConQATProcessor(description = "Returns always true.")
-public class AlwaysTrueCondition extends ConQATProcessorBase {
-
-	/** {@ConQAT.Doc} */
-	@AConQATParameter(name = "input", minOccurrences = 0, description = "Some parameters.")
-	public void addValue(
-			@SuppressWarnings("unused") @AConQATAttribute(name = "param", description = "Parameter to ignore") Object param) {
-		// nothing to do
+public class RevisionInfo {
+	
+	private final int index;
+	private final Commit commit;
+	private final File path;
+	
+	RevisionInfo(int index, Commit commit, File path)
+	{
+		this.index = index;
+		this.commit = commit;
+		this.path = path;
+		
+	}
+	
+	/** Returns index. */
+	public int getIndex() {
+		return index;
+	}
+	/** Returns commit. */
+	public Commit getCommit() {
+		return commit;
+	}
+	/** Returns path. */
+	public File getPath() {
+		return path;
 	}
 
-	/** {@inheritDoc} */
-	@Override
-	public Boolean process() {
-		return true;
-	}
 }

@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------+
 |                                                                          |
-| Copyright 2005-2011 The ConQAT Project                                   |
+| Copyright 2005-2011 the ConQAT Project                                   |
 |                                                                          |
 | Licensed under the Apache License, Version 2.0 (the "License");          |
 | you may not use this file except in compliance with the License.         |
@@ -16,31 +16,37 @@
 +-------------------------------------------------------------------------*/
 package com.mpdeimos.ct_tests.processors;
 
+import java.io.File;
+import java.util.Date;
+import java.util.List;
+
+import org.conqat.engine.code_clones.detection.CloneDetectionResultElement;
 import org.conqat.engine.commons.ConQATProcessorBase;
 import org.conqat.engine.core.core.AConQATAttribute;
 import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
+import org.conqat.engine.core.core.ConQATException;
 
 /**
- * {@ConQAT.Doc}
  * 
- * @author $Author: juergens $
- * @version $Rev: 35532 $
- * @ConQAT.Rating YELLOW Hash: FD23B6FC74A53ECF8C80824F88E2D3ED
+ * @author $Author: $
+ * @version $Rev: $
+ * @ConQAT.Rating RED Hash:
  */
-@AConQATProcessor(description = "Returns always true.")
-public class AlwaysTrueCondition extends ConQATProcessorBase {
+@AConQATProcessor(description = "TODO")
+public class CloneDetectionResultDateExtractor extends ConQATProcessorBase {
 
-	/** {@ConQAT.Doc} */
-	@AConQATParameter(name = "input", minOccurrences = 0, description = "Some parameters.")
-	public void addValue(
-			@SuppressWarnings("unused") @AConQATAttribute(name = "param", description = "Parameter to ignore") Object param) {
-		// nothing to do
+	private CloneDetectionResultElement result;
+
+	@AConQATParameter(name = "clone", minOccurrences = 1, maxOccurrences = 1, description = "TODO")
+	public void setOutput(
+			@AConQATAttribute(name = "report", description = "TODO") CloneDetectionResultElement result
+			) throws ConQATException {
+		this.result = result;
 	}
-
-	/** {@inheritDoc} */
-	@Override
-	public Boolean process() {
-		return true;
+	
+	public Date process()
+	{
+		return result.getSystemDate();
 	}
 }
