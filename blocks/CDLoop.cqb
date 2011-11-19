@@ -14,51 +14,33 @@
       </param>
       <processor class="com.mpdeimos.ct_tests.processors.CloneTrackingLoop" name="revision-looper">
          <output path="@dir.out"/>
-         <dummy ref="@multi-language-clone-analysis.*"/>
-         <constraint type="@non-overlapping-constraint"/>
-         <normalization language="JAVA" ref="@java-normalization.normalizationserializer"/>
-         <scope-factory ref="@token-element-factory"/>
          <looper ref="@directory-revision-looper"/>
          <project includePattern="@pattern" name="@projectName"/>
          <looper ref="@git-revision-looper"/>
          <database index-store="@in-memory-clone-index-store-factory" space="@database-space-factory"/>
-         <clone minlength="@clone.minlength"/>
+         <configuration ref="@java-configuration.output"/>
+         <configuration ref="@java-shaped-configuration.output"/>
       </processor>
       <processor class="org.conqat.engine.commons.string.Concatenator" name="db">
          <part string="@dir.out"/>
          <separator string="/"/>
          <part string="db.hsql"/>
       </processor>
-      <processor class="org.conqat.engine.commons.string.Concatenator" name="concatenator">
-         <part string="@dir.src"/>
-         <part string="r1"/>
-         <separator string="/"/>
-      </processor>
-      <block name="java-normalization" spec="org.conqat.engine.code_clones.languages.multi.JavaNormalization"/>
-      <block condition="@flags.traditional-clone-detection" name="multi-language-clone-analysis" spec="org.conqat.engine.code_clones.languages.multi.MultiLanguageCloneAnalysis">
-         <input dir="@concatenator" project="Test"/>
-         <output dir="@dir.out"/>
-         <include pattern="**/*.java"/>
-      </block>
       <param name="flags">
          <attr name="traditional-clone-detection"/>
       </param>
-      <processor class="org.conqat.engine.code_clones.core.constraint.NonOverlappingConstraint" name="non-overlapping-constraint"/>
       <processor class="org.conqat.engine.code_clones.index.store.mem.InMemoryCloneIndexStoreFactory" name="in-memory-clone-index-store-factory"/>
-      <processor class="org.conqat.engine.sourcecode.resource.TokenElementFactory" name="token-element-factory">
-         <language name="JAVA"/>
-      </processor>
       <processor class="org.conqat.engine.commons.string.Concatenator" name="pattern">
          <part string="**/*.java"/>
       </processor>
-      <processor class="com.mpdeimos.ct_tests.looper.DirectoryRevisionLooper" condition="@not-condition2" name="directory-revision-looper">
+      <processor class="com.mpdeimos.ct_tests.looper.DirectoryRevisionLooper" condition="@use-directories" name="directory-revision-looper">
          <directory path="@dir.src"/>
       </processor>
       <processor class="com.mpdeimos.ct_tests.looper.GitRevisionLooper" condition="@dir.is-git" name="git-revision-looper">
          <limit end="@limit.end" start="@limit.start"/>
          <directory path="@dir.src"/>
       </processor>
-      <processor class="org.conqat.engine.commons.bool.NotCondition" name="not-condition2">
+      <processor class="org.conqat.engine.commons.bool.NotCondition" name="use-directories">
          <input value="@dir.is-git"/>
       </processor>
       <processor class="org.conqat.engine.persistence.HSQLDatabaseConnector" condition="@always-true-condition2" name="hsql-database-connector">
@@ -85,11 +67,17 @@
       </param>
       <param name="clone">
          <attr name="minlength"/>
+         <attr name="shaped"/>
       </param>
-      <block name="java-preprocessing" spec="org.conqat.engine.code_clones.languages.java.JavaPreprocessing"/>
-      <block name="mixed-statement-normalization" spec="org.conqat.engine.code_clones.normalization.MixedStatementNormalization">
-         <token ignore-patterns="@java-preprocessing.ignore-patterns"/>
+      <block condition="@not-shaped" name="java-configuration" spec="com.mpdeimos.ct_tests.JavaConfiguration">
+         <clone min-length="@clone.minlength"/>
       </block>
+      <block condition="@clone.shaped" name="java-shaped-configuration" spec="com.mpdeimos.ct_tests.JavaShapedConfiguration">
+         <clone min-length="@clone.minlength"/>
+      </block>
+      <processor class="org.conqat.engine.commons.bool.NotCondition" name="not-shaped">
+         <input value="@clone.shaped"/>
+      </processor>
    </block-spec>
    <meta type="cq.edit">
       <entries namespace="dir">
@@ -105,30 +93,15 @@
          <entry key="pos" value="468,132"/>
          <entry key="edges_invisible" value="false"/>
       </entries>
-      <entries namespace="concatenator">
-         <entry key="pos" value="-432,588"/>
-      </entries>
-      <entries namespace="java-normalization">
-         <entry key="pos" value="-324,420"/>
-      </entries>
-      <entries namespace="multi-language-clone-analysis">
-         <entry key="pos" value="-432,672"/>
-      </entries>
       <entries namespace="flags">
          <entry key="pos" value="408,48"/>
          <entry key="edges_invisible" value="true"/>
       </entries>
-      <entries namespace="non-overlapping-constraint">
-         <entry key="pos" value="-300,276"/>
-      </entries>
       <entries namespace="in-memory-clone-index-store-factory">
          <entry key="pos" value="276,132"/>
       </entries>
-      <entries namespace="token-element-factory">
-         <entry key="pos" value="-300,204"/>
-      </entries>
       <entries namespace="pattern">
-         <entry key="pos" value="-300,348"/>
+         <entry key="pos" value="-300,276"/>
       </entries>
       <entries namespace="directory-revision-looper">
          <entry key="pos" value="-108,132"/>
@@ -136,7 +109,7 @@
       <entries namespace="git-revision-looper">
          <entry key="pos" value="84,132"/>
       </entries>
-      <entries namespace="not-condition2">
+      <entries namespace="use-directories">
          <entry key="pos" value="-300,132"/>
       </entries>
       <entries namespace="hsql-database-connector">
@@ -166,12 +139,16 @@
       </entries>
       <entries namespace="clone">
          <entry key="pos" value="-312,48"/>
+         <entry key="edges_invisible" value="true"/>
       </entries>
-      <entries namespace="java-preprocessing">
-         <entry key="pos" value="-684,252"/>
+      <entries namespace="java-configuration">
+         <entry key="pos" value="-408,204"/>
       </entries>
-      <entries namespace="mixed-statement-normalization">
-         <entry key="pos" value="-588,336"/>
+      <entries namespace="java-shaped-configuration">
+         <entry key="pos" value="-216,204"/>
+      </entries>
+      <entries namespace="not-shaped">
+         <entry key="pos" value="-600,204"/>
       </entries>
    </meta>
 </conqat>

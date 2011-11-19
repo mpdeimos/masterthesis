@@ -17,16 +17,10 @@
 package com.mpdeimos.ct_tests.processors;
 
 import java.io.File;
-import java.io.FileFilter;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.conqat.engine.clone_tracking.editpropagation.CloneEditPropagator;
 import org.conqat.engine.clone_tracking.matching.CloneMatcher;
@@ -36,64 +30,36 @@ import org.conqat.engine.code_clones.core.CloneDetectionException;
 import org.conqat.engine.code_clones.core.IDatabaseSpace;
 import org.conqat.engine.code_clones.core.Unit;
 import org.conqat.engine.code_clones.core.constraint.ICloneClassConstraint;
-import org.conqat.engine.code_clones.core.report.CloneReportWriter;
 import org.conqat.engine.code_clones.core.utils.CloneUtils;
 import org.conqat.engine.code_clones.detection.CloneDetectionResultElement;
-import org.conqat.engine.code_clones.detection.CloneDetector;
 import org.conqat.engine.code_clones.index.CloneIndex;
 import org.conqat.engine.code_clones.index.CloneIndexBuilder;
 import org.conqat.engine.code_clones.index.CloneIndexCloneDetector;
 import org.conqat.engine.code_clones.index.store.ICloneIndexStore;
 import org.conqat.engine.code_clones.normalization.provider.IUnitProvider;
-import org.conqat.engine.code_clones.normalization.repetition.RepetitiveStatementsRegionMarker;
-import org.conqat.engine.code_clones.result.CloneListReportWriterProcessor;
 import org.conqat.engine.code_clones.result.CloneReportWriterProcessor;
-import org.conqat.engine.code_clones.result.annotation.CloneUnitsAnnotator;
 import org.conqat.engine.commons.ConQATParamDoc;
 import org.conqat.engine.commons.ConQATProcessorBase;
-import org.conqat.engine.commons.node.ListNode;
-import org.conqat.engine.commons.node.NodeConstants;
-import org.conqat.engine.commons.node.NodeUtils;
-import org.conqat.engine.commons.sorting.NameSorter;
+import org.conqat.engine.commons.pattern.PatternList;
 import org.conqat.engine.core.core.AConQATAttribute;
-import org.conqat.engine.core.core.AConQATFieldParameter;
 import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
 import org.conqat.engine.core.core.ConQATException;
-import org.conqat.engine.core.driver.instance.BlockInstance;
 import org.conqat.engine.core.logging.testutils.ProcessorInfoMock;
 import org.conqat.engine.persistence.store.StorageException;
-import org.conqat.engine.resource.IContainer;
 import org.conqat.engine.resource.IContentAccessor;
-import org.conqat.engine.resource.IElement;
 import org.conqat.engine.resource.IResource;
-import org.conqat.engine.resource.build.IElementFactory;
 import org.conqat.engine.resource.build.ResourceBuilder;
 import org.conqat.engine.resource.scope.filesystem.FileSystemScope;
-import org.conqat.engine.resource.text.ITextElement;
-import org.conqat.engine.resource.text.ITextResource;
-import org.conqat.engine.resource.util.ConQATDirectoryScanner;
 import org.conqat.engine.resource.util.ResourceTraversalUtils;
 import org.conqat.engine.sourcecode.resource.ITokenElement;
 import org.conqat.engine.sourcecode.resource.ITokenResource;
 import org.conqat.engine.sourcecode.resource.TokenElement;
 import org.conqat.engine.sourcecode.resource.TokenResourceSelector;
-import org.conqat.engine.systemtest.report.ReportWriterForCloneDetectionResultElement;
 import org.conqat.lib.commons.clone.DeepCloneException;
 import org.conqat.lib.commons.collections.CollectionUtils;
-import org.conqat.lib.commons.collections.ListMap;
-import org.conqat.lib.commons.collections.Pair;
-import org.conqat.lib.commons.collections.PairList;
-import org.conqat.lib.commons.filesystem.DirectoryOnlyFilter;
-import org.conqat.lib.commons.filesystem.FilenameComparator;
-import org.conqat.lib.commons.string.StringUtils;
-import org.conqat.lib.scanner.ELanguage;
-import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevCommitList;
-import org.eclipse.jgit.revwalk.RevSort;
-import org.eclipse.jgit.revwalk.RevWalk;
 
+import com.mpdeimos.ct_tests.configuration.CDConfiguration;
 import com.mpdeimos.ct_tests.looper.RevisionInfo;
 import com.mpdeimos.ct_tests.looper.RevisionLooperMethodBase;
 import com.mpdeimos.ct_tests.vcs.Commit;
@@ -109,18 +75,17 @@ import com.mpdeimos.ct_tests.vcs.Commit;
 @AConQATProcessor(description = "TODO")
 public class CloneTrackingLoop extends ConQATProcessorBase  {
 
-	private static final int CLONE_MINLENGTH = 7;
 	private File baseDir;
 	private File outDir;
 	private ICloneIndexStore indexStore;
-	private List<ICloneClassConstraint> constraints = new ArrayList<ICloneClassConstraint>();
+
 	private ITokenResource tokenResource;
-	private boolean caseSensitive = true;
 	private String includePattern;
 	private String projectName;
 	private RevisionLooperMethodBase revisionLooper;
 	private IDatabaseSpace dbSpace;
-	private int cloneMinLength = CLONE_MINLENGTH;
+	private PatternList regionIgnorePattern;
+	private CDConfiguration config;
 	
 	@AConQATParameter(name = "project", minOccurrences = 1, maxOccurrences = 1, description = "working directory")
 	public void setFilename(
@@ -159,60 +124,23 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		this.dbSpace = dbSpace;
 	}
 	
-	@AConQATParameter(name = "clone", minOccurrences = 0, maxOccurrences = 1, description = "TODO")
-	public void setClones(
-			@AConQATAttribute(name = "minlength", description = "TODO", defaultValue="7") int minLength)
+	@AConQATParameter(name = "configuration", minOccurrences = 1, description = "TODO")
+	public void setConfiguration(
+			@AConQATAttribute(name = "ref", description = "TODO") CDConfiguration config)
 	{
-		this.cloneMinLength = minLength;
+		this.config = config;
 	}
-	
-	/** Normalizations used. */
-	private final Map<ELanguage, IUnitProvider<ITokenResource, Unit>> normalizations = new EnumMap<ELanguage, IUnitProvider<ITokenResource, Unit>>(
-			ELanguage.class);
 	
 	private ProcessorInfoMock infoMock = new ProcessorInfoMock();
-	
-	/** The factory used in the builder. */
-	private IElementFactory factory;
+
 	private Map<String, Unit[]> units = new HashMap<String, Unit[]>();
-
 	
-	/** {@ConQAT.Doc} */
-	@AConQATParameter(name = "normalization", description = "Sets the normalization used for a given language.", minOccurrences = 1)
-	public void setNormalization(
-			@AConQATAttribute(name = "language", description = "The language for which the normalization applies.") ELanguage language,
-			@AConQATAttribute(name = ConQATParamDoc.INPUT_REF_NAME, description = ConQATParamDoc.INPUT_REF_DESC) IUnitProvider<ITokenResource, Unit> normalization)
-			throws ConQATException {
-
-		if (normalizations.put(language, normalization) != null) {
-			throw new ConQATException(
-					"Duplicate normalization applied for language " + language);
-		}
-	}
-	
-	/** {@ConQAT.Doc} */
-	@AConQATParameter(name = "scope-factory", minOccurrences = 1, description = ""
-			+ "Adds a factory to this builder. If multiple factories are defined, "
-			+ "the first factory whose pattern matches the uniform path of the content accessor is used.")
-	public void addFactory(
-			@AConQATAttribute(name = ConQATParamDoc.INPUT_REF_NAME, description = ConQATParamDoc.INPUT_REF_DESC) IElementFactory factory)
-			throws ConQATException {
-				this.factory = factory;
-	}
-	
-	/** {@ConQAT.Doc} */
-	@AConQATParameter(name = "constraint", minOccurrences = 0, maxOccurrences = -1, description = ""
-			+ "Adds a constraint that each detected clone class must satisfy")
-	public void addConstraint(
-			@AConQATAttribute(name = "type", description = "Clone classes that do not match the constraint are filtered") ICloneClassConstraint constraint) {
-		constraints .add(constraint);
-	}
 	/** {@ConQAT.Doc} */
 	@AConQATParameter(name = "dummy", minOccurrences = 0, maxOccurrences = -1, description = ""
 			+ "TODO")
 	public void addConstraint(
 			@AConQATAttribute(name = "ref", description = "TODO") Object ref) {
-		// nothing1
+		// nothing
 	}
 	
 	
@@ -257,7 +185,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			CloneMatcher cloneMatcher = new CloneMatcher();
 			cloneMatcher.init(infoMock);
 			cloneMatcher.setDbSpace(this.dbSpace);
-			cloneMatcher.setMinLength(this.cloneMinLength);
+			cloneMatcher.setMinLength(config.getCloneMinLength());
 			cloneMatcher.setNewDetectionResult(detectionResult);
 			cloneMatcher.setUpdatedClones(updatedDetectionResult);
 			cloneMatcher.process(); // pipelined to detectionResult
@@ -279,18 +207,10 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		
 		detector.setInput(resource);
 		detector.setStoreFactory(indexStore);
-		detector.setMinLength(this.cloneMinLength); // TODO make configurable
-		for (ICloneClassConstraint constraint: this.constraints)
-		{
-			detector.addConstraint(constraint);
-		}
+		detector.setMinLength(config.getCloneMinLength()); // TODO make configurable
+		config.attachConstraints(detector);
 		CloneDetectionResultElement result = detector.process();
 		result = reattachUnits(result);
-		
-//		CloneUnitsAnnotator unitsAnnotator = new CloneUnitsAnnotator();
-//		unitsAnnotator.init(infoMock);
-//		unitsAnnotator.setRoot(result);
-//		unitsAnnotator.process(); // pipelined
 		
 		return result;
 	}
@@ -342,10 +262,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			// ...after some re-thinking: we may not always start with rev-1 in a repository, so keep for now
 			CloneIndexBuilder cloneIndexBuilder = new CloneIndexBuilder();
 			cloneIndexBuilder.init(infoMock);
-			for (ELanguage lang : this.normalizations.keySet())
-			{
-				cloneIndexBuilder.setNormalization(lang, this.normalizations.get(lang));
-			}
+			config.attachNormalization(cloneIndexBuilder);
 			cloneIndexBuilder.setStore(indexStore);
 			cloneIndexBuilder.setRoot(resource);
 			cloneIndexBuilder.process();
@@ -402,7 +319,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	 * @throws CloneDetectionException 
 	 */
 	private void extractUnits(ITokenElement element) throws CloneDetectionException {
-		IUnitProvider<ITokenResource, Unit> normalizer = this.normalizations.get(element.getLanguage());
+		IUnitProvider<ITokenResource, Unit> normalizer = config.getNormalization(element.getLanguage());
 		
 		normalizer.init(element, getLogger());
 		ArrayList<Unit> fileUnits = new ArrayList<Unit>();
@@ -434,7 +351,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		
 		ResourceBuilder resourceBuilder = new ResourceBuilder();
 		resourceBuilder.init(infoMock);
-		resourceBuilder.addFactory("**", factory, this.caseSensitive);
+		config.attachFactory(resourceBuilder);
 		resourceBuilder.addContentAccessors(scope);
 		IResource root = resourceBuilder.process();
 		
@@ -444,14 +361,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		
 		ITokenResource tokens = tokenResourceSelector.process();
 		
-		// TODO other restrictions from java clone tracking?
-		
-		RepetitiveStatementsRegionMarker rsrm = new RepetitiveStatementsRegionMarker();
-		rsrm.init(infoMock);
-		rsrm.setRoot(tokens);
-		rsrm.setMinLength(this.cloneMinLength, 2, 1, 10);
-		rsrm.process(); // pipelined
-		return tokens;
+		return config.preprocess(tokens);
 	}
 
 

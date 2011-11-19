@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+	$Id: $$
+	$Rev: 12646 $
+	@levd.rating YELLOW Rev: 11033
+-->
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.JavaConfiguration">
+      <out name="output" ref="@cd-configuration"/>
+      <processor class="com.mpdeimos.ct_tests.configuration.CDConfiguration" name="cd-configuration">
+         <normalization language="JAVA" ref="@java-normalization.normalizationserializer"/>
+         <scope-factories ref="@token-element-factory"/>
+         <constraint type="@non-overlapping-constraint"/>
+         <min-length clone="@clone.min-length"/>
+      </processor>
+      <block name="java-normalization" spec="org.conqat.engine.code_clones.languages.multi.JavaNormalization"/>
+      <param name="clone">
+         <attr name="min-length"/>
+      </param>
+      <param name="preprocessor">
+         <attr name="enable">
+            <doc>preprocessor</doc>
+         </attr>
+      </param>
+      <processor class="org.conqat.engine.sourcecode.resource.TokenElementFactory" name="token-element-factory">
+         <language name="JAVA"/>
+      </processor>
+      <processor class="org.conqat.engine.code_clones.core.constraint.NonOverlappingConstraint" name="non-overlapping-constraint"/>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="output">
+         <entry key="pos" value="564,408"/>
+      </entries>
+      <entries namespace="cd-configuration">
+         <entry key="pos" value="528,312"/>
+      </entries>
+      <entries namespace="java-normalization">
+         <entry key="pos" value="228,228"/>
+      </entries>
+      <entries namespace="clone">
+         <entry key="pos" value="564,24"/>
+      </entries>
+      <entries namespace="preprocessor">
+         <entry key="pos" value="420,84"/>
+      </entries>
+      <entries namespace="token-element-factory">
+         <entry key="pos" value="228,300"/>
+      </entries>
+      <entries namespace="non-overlapping-constraint">
+         <entry key="pos" value="756,312"/>
+      </entries>
+      <entries namespace="#comments">
+         <entry key="comment_1321279040256" value="The preprocessing could be removed by strategies&#10;"/>
+      </entries>
+      <entries namespace="#comment-bounds">
+         <entry key="comment_1321279040256" value="780,48,150,80"/>
+      </entries>
+   </meta>
+</conqat>

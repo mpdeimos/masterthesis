@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+	$Id: $$
+	$Rev: 12646 $
+	@levd.rating YELLOW Rev: 11033
+-->
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.JavaShapedConfiguration">
+      <out name="output" ref="@cd-configuration"/>
+      <processor class="com.mpdeimos.ct_tests.configuration.CDConfiguration" name="cd-configuration">
+         <normalization language="JAVA" ref="@mixed-shaped-statement-normalization.result"/>
+         <preprocessor ref="@input-classification-preprocessor"/>
+         <scope-factories ref="@token-element-factory"/>
+         <constraint type="@non-overlapping-constraint"/>
+         <min-length clone="@integer-defaults-processor"/>
+      </processor>
+      <block name="java-preprocessing" spec="org.conqat.engine.code_clones.languages.java.JavaPreprocessing"/>
+      <processor class="com.mpdeimos.ct_tests.configuration.InputClassificationPreprocessor" condition="@boolean-defaults-processor" name="input-classification-preprocessor">
+         <repetition min-length="@integer-defaults-processor"/>
+         <ignore-region pattern="@java-preprocessing.ignore-patterns"/>
+      </processor>
+      <param name="clone">
+         <attr name="min-length"/>
+      </param>
+      <param name="preprocessor">
+         <attr name="enable">
+            <doc>preprocessor</doc>
+         </attr>
+      </param>
+      <processor class="org.conqat.engine.commons.defaults.BooleanDefaultsProcessor" name="boolean-defaults-processor">
+         <default value="true"/>
+         <actual value="@preprocessor.enable"/>
+      </processor>
+      <processor class="org.conqat.engine.sourcecode.resource.TokenElementFactory" name="token-element-factory">
+         <language name="JAVA"/>
+      </processor>
+      <processor class="org.conqat.engine.code_clones.core.constraint.NonOverlappingConstraint" name="non-overlapping-constraint"/>
+      <processor class="org.conqat.engine.commons.defaults.IntegerDefaultsProcessor" name="integer-defaults-processor">
+         <default value="7"/>
+         <actual value="@clone.min-length"/>
+      </processor>
+      <block name="mixed-shaped-statement-normalization" spec="org.conqat.engine.code_clones.normalization.MixedShapedStatementNormalization">
+         <method depth="1"/>
+         <scope keywords="CLASS"/>
+         <scope keywords="INTERFACE"/>
+         <scope keywords="ENUM"/>
+      </block>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="output">
+         <entry key="pos" value="564,408"/>
+      </entries>
+      <entries namespace="cd-configuration">
+         <entry key="pos" value="528,312"/>
+      </entries>
+      <entries namespace="java-preprocessing">
+         <entry key="pos" value="744,132"/>
+      </entries>
+      <entries namespace="input-classification-preprocessor">
+         <entry key="pos" value="600,216"/>
+      </entries>
+      <entries namespace="clone">
+         <entry key="pos" value="564,24"/>
+      </entries>
+      <entries namespace="preprocessor">
+         <entry key="pos" value="420,84"/>
+      </entries>
+      <entries namespace="boolean-defaults-processor">
+         <entry key="pos" value="444,144"/>
+      </entries>
+      <entries namespace="token-element-factory">
+         <entry key="pos" value="228,300"/>
+      </entries>
+      <entries namespace="non-overlapping-constraint">
+         <entry key="pos" value="756,312"/>
+      </entries>
+      <entries namespace="integer-defaults-processor">
+         <entry key="pos" value="588,72"/>
+      </entries>
+      <entries namespace="mixed-shaped-statement-normalization">
+         <entry key="pos" value="204,156"/>
+      </entries>
+   </meta>
+</conqat>
