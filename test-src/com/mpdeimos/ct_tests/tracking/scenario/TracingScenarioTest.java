@@ -63,9 +63,9 @@ public class TracingScenarioTest extends CCSMTestCaseBase {
 		String folderName = inputFolder.getName();
 		boolean ignored = folderName.contains(".svn")
 				|| folderName.equals("unchanged");
-		// Use this line to selectively include certain tests during debugging
-		// boolean focused = folderName.contains("split");
 		boolean focused = true;
+		// Use this line to selectively include certain tests during debugging
+		focused = folderName.equals("consistent_change");
 		return ignored || !focused;
 	}
 

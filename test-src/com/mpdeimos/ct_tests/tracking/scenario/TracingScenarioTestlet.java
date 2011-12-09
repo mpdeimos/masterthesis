@@ -221,6 +221,7 @@ public class TracingScenarioTestlet extends TestletBase {
 		TestDriver driver = new TestDriver();
 		driver.readPropertyFile(getPropertiesFilename());
 		driver.addCommandLineProperty("clone.minlength=5");
+		driver.addCommandLineProperty("clone.shaped=true");
 		return driver;
 	}
 

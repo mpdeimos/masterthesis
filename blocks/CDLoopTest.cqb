@@ -9,7 +9,7 @@
          <flags traditional-clone-detection="@flags.traditional-clone-detection"/>
          <dir is-git="@dir.is-git" out="@dir.out" src="@dir.src"/>
          <limit end="@limit.end" start="@limit.start"/>
-         <clone minlength="@clone.minlength"/>
+         <clone minlength="@clone.minlength" shaped="@clone.shaped"/>
       </block>
       <param name="dir">
          <attr name="src">
@@ -75,6 +75,7 @@
       </processor>
       <param name="clone">
          <attr name="minlength"/>
+         <attr name="shaped"/>
       </param>
    </block-spec>
    <meta type="cq.edit">

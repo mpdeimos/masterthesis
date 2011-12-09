@@ -17,20 +17,26 @@
 package com.mpdeimos.ct_tests.processors;
 
 import java.io.File;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.conqat.engine.clone_tracking.editpropagation.CloneEditPropagator;
+import org.conqat.engine.clone_tracking.gateways.KeyValueGateway;
 import org.conqat.engine.clone_tracking.matching.CloneMatcher;
 import org.conqat.engine.code_clones.core.Clone;
 import org.conqat.engine.code_clones.core.CloneClass;
 import org.conqat.engine.code_clones.core.CloneDetectionException;
 import org.conqat.engine.code_clones.core.IDatabaseSpace;
+import org.conqat.engine.code_clones.core.KeyValueStoreBase;
 import org.conqat.engine.code_clones.core.Unit;
 import org.conqat.engine.code_clones.core.constraint.ICloneClassConstraint;
+import org.conqat.engine.code_clones.core.report.enums.EChangeType;
 import org.conqat.engine.code_clones.core.utils.CloneUtils;
+import org.conqat.engine.code_clones.core.utils.ECloneClassChange;
 import org.conqat.engine.code_clones.detection.CloneDetectionResultElement;
 import org.conqat.engine.code_clones.index.CloneIndex;
 import org.conqat.engine.code_clones.index.CloneIndexBuilder;
@@ -46,6 +52,7 @@ import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
 import org.conqat.engine.core.core.ConQATException;
 import org.conqat.engine.core.logging.testutils.ProcessorInfoMock;
+import org.conqat.engine.persistence.DatabaseUtils;
 import org.conqat.engine.persistence.store.StorageException;
 import org.conqat.engine.resource.IContentAccessor;
 import org.conqat.engine.resource.IResource;
@@ -58,6 +65,7 @@ import org.conqat.engine.sourcecode.resource.TokenElement;
 import org.conqat.engine.sourcecode.resource.TokenResourceSelector;
 import org.conqat.lib.commons.clone.DeepCloneException;
 import org.conqat.lib.commons.collections.CollectionUtils;
+import org.conqat.lib.commons.string.StringUtils;
 
 import com.mpdeimos.ct_tests.configuration.CDConfiguration;
 import com.mpdeimos.ct_tests.looper.RevisionInfo;
@@ -75,6 +83,7 @@ import com.mpdeimos.ct_tests.vcs.Commit;
 @AConQATProcessor(description = "TODO")
 public class CloneTrackingLoop extends ConQATProcessorBase  {
 
+	private static final String BUGSUSPECTION = "bugsuspection";
 	private File baseDir;
 	private File outDir;
 	private ICloneIndexStore indexStore;
@@ -107,6 +116,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	public void setOutput(
 			@AConQATAttribute(name = "path", description = "TODO")
 			String filename) throws ConQATException {
+		Long a = (Long) null;
 		this.outDir = new File(filename);
 		if (!outDir.exists())
 			outDir.mkdir();
@@ -175,6 +185,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			initPhase = false;
 			
 			CloneDetectionResultElement detectionResult = loop_runCloneDetection(revision, resource);
+			loop_writeResults(revision, detectionResult, "all-bt");
 			
 			CloneEditPropagator cloneEditPropagator = new CloneEditPropagator();
 			cloneEditPropagator.init(infoMock);
@@ -190,6 +201,9 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			cloneMatcher.setUpdatedClones(updatedDetectionResult);
 			cloneMatcher.process(); // pipelined to detectionResult
 			
+			KeyValueGateway keyValueGateway = new KeyValueGateway(dbSpace, getLogger()); // TODO member?
+			loop_markReportAndClones(detectionResult, revision, keyValueGateway);
+			
 			detectionResults.add(detectionResult);
 			loop_writeResults(revision, detectionResult, "all");
 			loop_writeResults(revision, updatedDetectionResult, "propagated");
@@ -197,6 +211,74 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		
 		
 		return detectionResults;
+	}
+
+	private HashMap<Long, Clone> lastPotentialBugs = new HashMap<Long, Clone>();
+	
+	/**
+	 * @param detectionResult
+	 * @param revision
+	 * @param keyValueGateway 
+	 */
+	private void loop_markReportAndClones(CloneDetectionResultElement detectionResult,
+			RevisionInfo revision, KeyValueGateway keyValueGateway) throws ConQATException {
+		try
+		{
+			HashMap<Long, Clone> newPotentialBugs = new HashMap<Long, Clone>();
+			String message = revision.getCommit().getMessage();
+			Statement stmt = dbSpace.getDbConnection().createStatement();
+			
+			boolean potentialBug = StringUtils.containsOneOf(message.toLowerCase(), "fix", "#", "cr");
+			for (CloneClass cloneClass : detectionResult.getList())
+			{
+				String bugMessage = null;
+				if (potentialBug)
+				{
+					if (ECloneClassChange.INCONSISTENT == CloneUtils.getChangeType(cloneClass))
+					{
+						bugMessage = message;
+						for (Clone clone : cloneClass.getClones())
+						{
+							addSuspection(keyValueGateway, message, stmt, clone);
+							newPotentialBugs.put(clone.getId(), clone);
+						}
+					}
+				}
+				else
+				{
+					for (Clone clone : cloneClass.getClones())
+					{
+						long ancestorId = CloneUtils.getAncestorId(clone);
+						Clone ancestor = lastPotentialBugs.get(ancestorId);
+						if (ancestor != null)
+						{
+							bugMessage = (String) ancestor.getValue(BUGSUSPECTION);
+							addSuspection(keyValueGateway, bugMessage, stmt, clone);
+							newPotentialBugs.put(clone.getId(), clone);
+						}
+					}
+				}
+				
+				if (bugMessage != null)
+				{
+					detectionResult.setValue(BUGSUSPECTION, true);
+					addSuspection(keyValueGateway, bugMessage, stmt, cloneClass);
+				}
+			}
+			
+			DatabaseUtils.executeAndClose(stmt);
+			this.lastPotentialBugs = newPotentialBugs;
+		}
+		catch (SQLException e)
+		{
+			throw new ConQATException(e);
+		}
+	}
+
+	private void addSuspection(KeyValueGateway keyValueGateway, String message,
+			Statement stmt, KeyValueStoreBase kv) throws SQLException {
+		kv.setValue(BUGSUSPECTION, message);
+		stmt.addBatch(keyValueGateway.createInsertValueSql(kv.getId(), BUGSUSPECTION, message));
 	}
 
 	private CloneDetectionResultElement loop_runCloneDetection(RevisionInfo revision, ITokenResource resource)
@@ -264,7 +346,9 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			cloneIndexBuilder.init(infoMock);
 			config.attachNormalization(cloneIndexBuilder);
 			cloneIndexBuilder.setStore(indexStore);
+			cloneIndexBuilder.setIgnoreKey("ignore");
 			cloneIndexBuilder.setRoot(resource);
+			cloneIndexBuilder.setChunkLength(config.getCloneMinLength());
 			cloneIndexBuilder.process();
 			
 			for (String file : resourceMap.keySet())
@@ -293,7 +377,8 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				if (iTokenElement == null)
 					continue;
 				
-				index.removeFile(iTokenElement);
+				if (indexStore.getChunksByOrigin(file) != null)
+					indexStore.removeChunks(file);
 				index.insertFile(iTokenElement);
 				extractUnits(iTokenElement);
 			}
@@ -324,12 +409,10 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		normalizer.init(element, getLogger());
 		ArrayList<Unit> fileUnits = new ArrayList<Unit>();
 		Unit unit = null;
-		int unitCount = 0;
 		while ((unit = normalizer.getNext()) != null) {
 			if (!unit.isSynthetic()) {
-				unitCount += 1;
+				fileUnits.add(unit);
 			}
-			fileUnits.add(unit);
 		}
 		units.put(element.getUniformPath(), CollectionUtils.toArray(fileUnits, Unit.class));
 //		if (unitCount == 0) {
@@ -363,28 +446,4 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		
 		return config.preprocess(tokens);
 	}
-
-
-	class DummyTextElement extends TokenElement
-	{
-		private final String path;
-
-		/**
-		 * @param other
-		 * @throws DeepCloneException
-		 */
-		protected DummyTextElement(String path)
-				throws DeepCloneException {
-			super(null, null, null);
-			this.path = path;
-		}
-		
-		/** {@inheritDoc} */
-		@Override
-		public String getUniformPath() {
-			return path;
-		}
-	}
-	
-	
 }

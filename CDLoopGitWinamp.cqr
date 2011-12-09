@@ -5,5 +5,5 @@ clone.minlength=7
 clone.shaped=false
 flags.traditional-clone-detection=false
 dir.is-git=true
-dir.src=/home/mpdeimos/workspaces/cq/ct_data/src/b
-dir.out=/home/mpdeimos/workspaces/cq/ct_data/out/b
+dir.src=/home/mpdeimos/workspaces/android/wa-cq
+dir.out=/home/mpdeimos/workspaces/cq/out/winamp
