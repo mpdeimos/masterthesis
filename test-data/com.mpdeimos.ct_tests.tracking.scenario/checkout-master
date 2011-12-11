@@ -1,0 +1,1 @@
+find . -name git -exec git --work-tree={} --git-dir={}/.git checkout master \;
