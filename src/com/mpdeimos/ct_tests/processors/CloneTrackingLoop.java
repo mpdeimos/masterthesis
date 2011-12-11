@@ -36,6 +36,7 @@ import org.conqat.engine.code_clones.core.Unit;
 import org.conqat.engine.code_clones.core.constraint.ICloneClassConstraint;
 import org.conqat.engine.code_clones.core.report.enums.EChangeType;
 import org.conqat.engine.code_clones.core.utils.CloneUtils;
+import org.conqat.engine.code_clones.core.utils.EBooleanStoredValue;
 import org.conqat.engine.code_clones.core.utils.ECloneClassChange;
 import org.conqat.engine.code_clones.detection.CloneDetectionResultElement;
 import org.conqat.engine.code_clones.index.CloneIndex;
@@ -63,6 +64,7 @@ import org.conqat.engine.sourcecode.resource.ITokenElement;
 import org.conqat.engine.sourcecode.resource.ITokenResource;
 import org.conqat.engine.sourcecode.resource.TokenElement;
 import org.conqat.engine.sourcecode.resource.TokenResourceSelector;
+import org.conqat.lib.commons.algo.Diff.Delta;
 import org.conqat.lib.commons.clone.DeepCloneException;
 import org.conqat.lib.commons.collections.CollectionUtils;
 import org.conqat.lib.commons.string.StringUtils;
@@ -116,7 +118,6 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	public void setOutput(
 			@AConQATAttribute(name = "path", description = "TODO")
 			String filename) throws ConQATException {
-		Long a = (Long) null;
 		this.outDir = new File(filename);
 		if (!outDir.exists())
 			outDir.mkdir();
@@ -187,19 +188,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			CloneDetectionResultElement detectionResult = loop_runCloneDetection(revision, resource);
 			loop_writeResults(revision, detectionResult, "all-bt");
 			
-			CloneEditPropagator cloneEditPropagator = new CloneEditPropagator();
-			cloneEditPropagator.init(infoMock);
-			cloneEditPropagator.setDbSpace(this.dbSpace);
-			cloneEditPropagator.setNewDetectionResult(detectionResult);
-			CloneDetectionResultElement updatedDetectionResult = cloneEditPropagator.process();
-			
-			CloneMatcher cloneMatcher = new CloneMatcher();
-			cloneMatcher.init(infoMock);
-			cloneMatcher.setDbSpace(this.dbSpace);
-			cloneMatcher.setMinLength(config.getCloneMinLength());
-			cloneMatcher.setNewDetectionResult(detectionResult);
-			cloneMatcher.setUpdatedClones(updatedDetectionResult);
-			cloneMatcher.process(); // pipelined to detectionResult
+			CloneDetectionResultElement updatedDetectionResult = loop_cloneTracking(detectionResult);
 			
 			KeyValueGateway keyValueGateway = new KeyValueGateway(dbSpace, getLogger()); // TODO member?
 			loop_markReportAndClones(detectionResult, revision, keyValueGateway);
@@ -211,6 +200,49 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		
 		
 		return detectionResults;
+	}
+
+	private CloneDetectionResultElement loop_cloneTracking(
+			CloneDetectionResultElement detectionResult) throws ConQATException {
+		CloneEditPropagator cloneEditPropagator = new CloneEditPropagator();
+		cloneEditPropagator.init(infoMock);
+		cloneEditPropagator.setDbSpace(this.dbSpace);
+		cloneEditPropagator.setNewDetectionResult(detectionResult);
+		CloneDetectionResultElement updatedDetectionResult = cloneEditPropagator.process();
+		
+		CloneMatcher cloneMatcher = new CloneMatcher();
+		cloneMatcher.init(infoMock);
+		cloneMatcher.setDbSpace(this.dbSpace);
+		cloneMatcher.setMinLength(config.getCloneMinLength());
+		cloneMatcher.setNewDetectionResult(detectionResult);
+		cloneMatcher.setUpdatedClones(updatedDetectionResult);
+		cloneMatcher.process(); // pipelined to detectionResult
+		
+		// TODO depending on how we decide on non-changing fingerprints we need to shift this into the clone matching algorithm
+		for (CloneClass cloneClass : detectionResult.getList())
+		{
+			for (Clone clone : cloneClass.getClones())
+			{
+				Delta<Unit> delta = CloneUtils.getEditOperations(clone);
+				// FIXME hack
+				if (changesetSize(delta) > 0)
+					clone.setFingerprintLastModified(detectionResult.getSystemDate());
+				// TODO persist to DB?
+				// for now it doesn't make any difference since we're always comparing w/ latest run.
+			}
+		}
+		return updatedDetectionResult;
+	}
+
+	/**
+	 * @param delta
+	 * @return
+	 */
+	private int changesetSize(Delta<Unit> delta) {
+		if (delta == null)
+			return 0;
+		
+		return delta.getSize();
 	}
 
 	private HashMap<Long, Clone> lastPotentialBugs = new HashMap<Long, Clone>();
@@ -231,18 +263,22 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			boolean potentialBug = StringUtils.containsOneOf(message.toLowerCase(), "fix", "#", "cr");
 			for (CloneClass cloneClass : detectionResult.getList())
 			{
+				if (EBooleanStoredValue.GHOST.falseForAllClones(cloneClass)) // no propagation needed
+					continue;
+				
 				String bugMessage = null;
 				if (potentialBug)
 				{
-					if (ECloneClassChange.INCONSISTENT == CloneUtils.getChangeType(cloneClass))
-					{
+//					if (ECloneClassChange.INCONSISTENT == CloneUtils.getChangeType(cloneClass))
+//					if (!EBooleanStoredValue.GHOST.falseForAllClones(cloneClass)) // inconsistent
+//					{
 						bugMessage = message;
 						for (Clone clone : cloneClass.getClones())
 						{
 							addSuspection(keyValueGateway, message, stmt, clone);
 							newPotentialBugs.put(clone.getId(), clone);
 						}
-					}
+//					}
 				}
 				else
 				{
