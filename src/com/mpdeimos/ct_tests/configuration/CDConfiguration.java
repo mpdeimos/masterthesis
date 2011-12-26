@@ -71,13 +71,19 @@ public class CDConfiguration extends ConfigurationProcessor<CDConfiguration> {
 	/** Normalizations used. */
 	private final Map<ELanguage, IUnitProvider<ITokenResource, Unit>> normalizations = new EnumMap<ELanguage, IUnitProvider<ITokenResource, Unit>>(
 			ELanguage.class);
-	
+	@AConQATParameter(name = "include", description = "Sets the normalization used for a given language.", minOccurrences = 1, maxOccurrences = 1)
+	public void setIncludePattern(
+	@AConQATAttribute(name = "pattern", description = "The include pattern.") String pattern)
+	{
+		includePattern = pattern;
+	}
 	/** {@ConQAT.Doc} */
 	@AConQATParameter(name = "normalization", description = "Sets the normalization used for a given language.", minOccurrences = 1)
 	public void setNormalization(
 			@AConQATAttribute(name = "language", description = "The language for which the normalization applies.") ELanguage language,
 			@AConQATAttribute(name = ConQATParamDoc.INPUT_REF_NAME, description = ConQATParamDoc.INPUT_REF_DESC) IUnitProvider<ITokenResource, Unit> normalization)
 			throws ConQATException {
+		
 
 		if (normalizations.put(language, normalization) != null) {
 			throw new ConQATException(
@@ -86,6 +92,8 @@ public class CDConfiguration extends ConfigurationProcessor<CDConfiguration> {
 	}
 	
 	private List<ICloneClassConstraint> constraints = new ArrayList<ICloneClassConstraint>();
+
+	private String includePattern;
 	
 	/** {@ConQAT.Doc} */
 	@AConQATParameter(name = "constraint", minOccurrences = 0, maxOccurrences = -1, description = ""
@@ -154,5 +162,10 @@ public class CDConfiguration extends ConfigurationProcessor<CDConfiguration> {
 		{
 			detector.addConstraint(constraint);
 		}
+	}
+	
+	public String getIncludePattern()
+	{
+		return this.includePattern;
 	}
 }

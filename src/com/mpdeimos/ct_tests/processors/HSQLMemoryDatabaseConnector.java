@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------+
 |                                                                          |
-| Copyright 2005-2011 the ConQAT Project                                   |
+| Copyright 2005-2011 The ConQAT Project                                   |
 |                                                                          |
 | Licensed under the Apache License, Version 2.0 (the "License");          |
 | you may not use this file except in compliance with the License.         |
@@ -17,40 +17,55 @@
 package com.mpdeimos.ct_tests.processors;
 
 import java.io.File;
-import java.lang.ref.SoftReference;
-import java.util.List;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
-import org.conqat.engine.commons.ConQATProcessorBase;
 import org.conqat.engine.core.core.AConQATAttribute;
 import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
 import org.conqat.engine.core.core.ConQATException;
+import org.conqat.engine.persistence.DatabaseConnectorBase;
+import org.conqat.lib.commons.filesystem.FileSystemUtils;
+import org.hsqldb.jdbcDriver;
 
 /**
+ * {@ConQAT.Doc}
  * 
- * @author $Author: $
- * @version $Rev: $
- * @ConQAT.Rating RED Hash:
+ * @author Florian Deissenboeck
+ * @author $Author: juergens $
+ * @version $Rev: 35197 $
+ * @ConQAT.Rating GREEN Hash: E03561C1429B5321C83F364517253320
  */
-public class ListPicker<T> extends ConQATProcessorBase {
+@AConQATProcessor(description = "This processor creates a connection "
+		+ "to a file-based HSQLDB database.")
+public class HSQLMemoryDatabaseConnector extends DatabaseConnectorBase {
 
-	private T picked;
+	/** Database file. */
+	private String dbName;
 
-
-	@AConQATParameter(name = "list", minOccurrences = 1, maxOccurrences = 1, description = "TODO")
-	public void setOutput(
-			@AConQATAttribute(name = "index", description = "TODO") int index,
-			@AConQATAttribute(name = "ref", description = "TODO") SoftReference<List<T>> list
-			) throws ConQATException {
-		picked = list.get().get(index < 0 ? list.get().size() + index : index);
+	/** {@ConQAT.Doc} */
+	@AConQATParameter(name = "db", minOccurrences = 1, maxOccurrences = 1, description = "Database.")
+	public void setFile(
+			@AConQATAttribute(name = "name", description = "The name of the database.") String dbName) {
+		this.dbName = dbName;
 	}
-	
-	
-	/** {@inheritDoc} 
-	 * @return */
+
+	/** {@inheritDoc} */
 	@Override
-	public T process()  {
-		return picked;
+	protected Connection setupConnection() throws SQLException, ConQATException {
+
+		try {
+			Class.forName(jdbcDriver.class.getName());
+		} catch (ClassNotFoundException e) {
+			throw new ConQATException("Can't load driver for HSQLDB.");
+		}
+
+		Connection connection = DriverManager.getConnection("jdbc:hsqldb:mem:"
+				 + dbName + ";shutdown=true", "SA", "");
+
+		return connection;
 	}
 
 }

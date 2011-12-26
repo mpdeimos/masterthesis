@@ -2,8 +2,9 @@
 limit.start=null
 limit.end=master
 clone.minlength=7
-clone.shaped=false
+clone.shaped=true
 flags.traditional-clone-detection=false
+flags.write-interim-results=false
 dir.is-git=true
 dir.src=/home/mpdeimos/workspaces/android/wa-cq
 dir.out=/home/mpdeimos/workspaces/cq/out/winamp

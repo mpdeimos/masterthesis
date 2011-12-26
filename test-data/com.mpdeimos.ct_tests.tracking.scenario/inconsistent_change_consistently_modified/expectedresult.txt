@@ -1,0 +1,6 @@
+# See package.html for test package edu.tum.cs.conqat.clonedetective.tracing.scenario for documentation.
+clones-added.xml:CC(2)
+clones-tracked.xml:CC(2-CONSISTENT),CC(2-CONSISTENT),CC(2-NONE)
+clones-consistently-modified.xml:CC(2)
+clones-inconsistently-modified.xml:CC(2)
+clones-removed.xml:

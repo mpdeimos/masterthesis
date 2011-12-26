@@ -52,5 +52,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/gitective.jar" sourcepath="/org.gitective.core"/>
+	<classpathentry kind="lib" path="/ccsm-libs/hsqldb.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

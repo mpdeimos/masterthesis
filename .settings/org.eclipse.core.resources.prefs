@@ -1,9 +1,12 @@
-#Mon Nov 14 15:33:14 CET 2011
+#Mon Dec 19 12:08:48 CET 2011
 eclipse.preferences.version=1
 encoding//blocks/CD.cqb=UTF-8
 encoding//blocks/CD2.cqb=UTF-8
 encoding//blocks/CDLoop.cqb=UTF-8
 encoding//blocks/CDLoopTest.cqb=UTF-8
+encoding//blocks/ConfigurationFactory.cqb=UTF-8
+encoding//blocks/CsShapedConfiguration.cqb=UTF-8
+encoding//blocks/HSQLFileConnection.cqb=UTF-8
 encoding//blocks/JavaConfiguration.cqb=UTF-8
 encoding//blocks/JavaShapedConfiguration.cqb=UTF-8
 encoding//blocks/TestCloneAnalysis.cqb=UTF-8

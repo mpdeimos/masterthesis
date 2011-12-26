@@ -23,7 +23,9 @@ import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
 import org.conqat.engine.core.core.ConQATException;
 import org.conqat.engine.core.logging.testutils.ProcessorInfoMock;
+import org.conqat.engine.resource.mark.ContentMarker;
 import org.conqat.engine.resource.regions.RegexRegionMarker;
+import org.conqat.engine.sourcecode.analysis.BlockMarker;
 import org.conqat.engine.sourcecode.resource.ITokenResource;
 
 import com.mpdeimos.ct_tests.configuration.CDConfiguration.Preprocessor;
@@ -40,6 +42,7 @@ public class InputClassificationPreprocessor extends ConfigurationProcessor<Inpu
 	private PatternList regionIgnorePattern;
 	private int minLength;
 	private PatternList fileIgnorePattern;
+	private PatternList blockIgnorePattern;
 
 	@AConQATParameter(name = "ignore-file", minOccurrences = 0, maxOccurrences = 1, description = "TODO")
 	public void setIgnoreFile(
@@ -53,6 +56,13 @@ public class InputClassificationPreprocessor extends ConfigurationProcessor<Inpu
 			@AConQATAttribute(name = "pattern", description = "TODO") PatternList rp)
 	{
 		this.regionIgnorePattern = rp;
+	}
+	
+	@AConQATParameter(name = "ignore-blocks", minOccurrences = 0, maxOccurrences = 1, description = "TODO")
+	public void setIgnoreBlocks(
+			@AConQATAttribute(name = "pattern", description = "TODO") PatternList rp)
+	{
+		this.blockIgnorePattern = rp;
 	}
 	
 	@AConQATParameter(name = "repetition", minOccurrences = 1, maxOccurrences = 1, description = "TODO")
@@ -71,14 +81,34 @@ public class InputClassificationPreprocessor extends ConfigurationProcessor<Inpu
 		
 		ProcessorInfoMock processorInfoMock = new ProcessorInfoMock();
 		
-		RegexRegionMarker rrm = new RegexRegionMarker();
-		rrm.init(processorInfoMock);
-		rrm.setRoot(tokens);
-		rrm.setRegionParameters(this.regionIgnorePattern, "package statements", false);
-		rrm.setRegionSetName("ignore");
+		if (this.blockIgnorePattern != null)
+		{
+			BlockMarker bm = new BlockMarker();
+			bm.init(processorInfoMock);
+			bm.setRegionSetName("ignore");
+			bm.setRoot(tokens);
+			bm.setPatterns(this.blockIgnorePattern);
+			bm.process();
+		}
 		
-		// TODO file ignore
+		if (regionIgnorePattern != null)
+		{
+			RegexRegionMarker rrm = new RegexRegionMarker();
+			rrm.init(processorInfoMock);
+			rrm.setRoot(tokens);
+			rrm.setRegionParameters(this.regionIgnorePattern, "package statements", false);
+			rrm.setRegionSetName("ignore");
+			rrm.process();
+		}
 		
+		if (fileIgnorePattern != null) {
+			ContentMarker cm = new ContentMarker();
+			cm.init(processorInfoMock);
+			cm.setRoot(tokens);
+			cm.setPatternList(this.fileIgnorePattern);
+			cm.setMarkValue("ignore", "true", "boolean");
+			cm.process();
+		}
 		RepetitiveStatementsRegionMarker rsrm = new RepetitiveStatementsRegionMarker();
 		rsrm.init(processorInfoMock);
 		rsrm.setRoot(tokens);

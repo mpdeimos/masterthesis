@@ -11,6 +11,7 @@
          <scope-factories ref="@token-element-factory"/>
          <constraint type="@non-overlapping-constraint"/>
          <min-length clone="@clone.min-length"/>
+         <include pattern="**/*.java"/>
       </processor>
       <block name="java-normalization" spec="org.conqat.engine.code_clones.languages.multi.JavaNormalization"/>
       <param name="clone">

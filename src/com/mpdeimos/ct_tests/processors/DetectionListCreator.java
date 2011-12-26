@@ -16,15 +16,15 @@
 +-------------------------------------------------------------------------*/
 package com.mpdeimos.ct_tests.processors;
 
-import java.io.File;
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.List;
 
+import javax.naming.Reference;
+
+import org.conqat.engine.code_clones.detection.CloneDetectionResultElement;
 import org.conqat.engine.commons.ConQATProcessorBase;
-import org.conqat.engine.core.core.AConQATAttribute;
-import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
-import org.conqat.engine.core.core.ConQATException;
 
 /**
  * 
@@ -32,25 +32,19 @@ import org.conqat.engine.core.core.ConQATException;
  * @version $Rev: $
  * @ConQAT.Rating RED Hash:
  */
-public class ListPicker<T> extends ConQATProcessorBase {
+@AConQATProcessor(description = "TODO")
+public class DetectionListCreator extends ConQATProcessorBase {
 
-	private T picked;
-
-
-	@AConQATParameter(name = "list", minOccurrences = 1, maxOccurrences = 1, description = "TODO")
-	public void setOutput(
-			@AConQATAttribute(name = "index", description = "TODO") int index,
-			@AConQATAttribute(name = "ref", description = "TODO") SoftReference<List<T>> list
-			) throws ConQATException {
-		picked = list.get().get(index < 0 ? list.get().size() + index : index);
-	}
 	
-	
+	private static 
+	ArrayList<CloneDetectionResultElement> list;
+
 	/** {@inheritDoc} 
 	 * @return */
 	@Override
-	public T process()  {
-		return picked;
+	public SoftReference<List<CloneDetectionResultElement>> process()  {
+		list = new ArrayList<CloneDetectionResultElement>();
+		return new SoftReference<List<CloneDetectionResultElement>>(list);
 	}
 
 }

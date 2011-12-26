@@ -13,26 +13,25 @@
          <attr name="is-git"/>
       </param>
       <processor class="com.mpdeimos.ct_tests.processors.CloneTrackingLoop" name="revision-looper">
-         <output path="@dir.out"/>
          <looper ref="@directory-revision-looper"/>
-         <project includePattern="@pattern" name="@projectName"/>
+         <project includePattern="" name="@projectName"/>
          <looper ref="@git-revision-looper"/>
          <database index-store="@in-memory-clone-index-store-factory" space="@database-space-factory"/>
-         <configuration ref="@java-configuration.output"/>
-         <configuration ref="@java-shaped-configuration.output"/>
+         <dummy ref="@flags.traditional-clone-detection"/>
+         <output path="@dir.out" write-interim-results="@boolean-defaults-processor"/>
+         <result list="@result.list"/>
+         <configuration ref="@configuration-factory.configuration"/>
       </processor>
-      <processor class="org.conqat.engine.commons.string.Concatenator" name="db">
+      <processor class="org.conqat.engine.commons.string.Concatenator" condition="@optional-string-param.parameter-present" name="dd">
          <part string="@dir.out"/>
          <separator string="/"/>
-         <part string="db.hsql"/>
+         <part string="@optional-string-param.result"/>
       </processor>
       <param name="flags">
          <attr name="traditional-clone-detection"/>
+         <attr name="write-interim-results"/>
       </param>
       <processor class="org.conqat.engine.code_clones.index.store.mem.InMemoryCloneIndexStoreFactory" name="in-memory-clone-index-store-factory"/>
-      <processor class="org.conqat.engine.commons.string.Concatenator" name="pattern">
-         <part string="**/*.java"/>
-      </processor>
       <processor class="com.mpdeimos.ct_tests.looper.DirectoryRevisionLooper" condition="@use-directories" name="directory-revision-looper">
          <directory path="@dir.src"/>
       </processor>
@@ -44,11 +43,11 @@
          <input value="@dir.is-git"/>
       </processor>
       <processor class="org.conqat.engine.persistence.HSQLDatabaseConnector" condition="@always-true-condition2" name="hsql-database-connector">
-         <file path="@db"/>
+         <file path="@dd"/>
       </processor>
       <processor class="org.conqat.engine.clone_tracking.DatabaseSpaceFactory" name="database-space-factory">
          <system name="@projectName"/>
-         <database connection="@hsql-database-connector"/>
+         <database connection="@database-connection-selector"/>
       </processor>
       <processor class="org.conqat.engine.commons.defaults.StringDefaultsProcessor" name="projectName">
          <default value="Project"/>
@@ -69,14 +68,39 @@
          <attr name="minlength"/>
          <attr name="shaped"/>
       </param>
-      <block condition="@not-shaped" name="java-configuration" spec="com.mpdeimos.ct_tests.JavaConfiguration">
-         <clone min-length="@clone.minlength"/>
+      <processor class="com.mpdeimos.ct_tests.processors.HSQLMemoryDatabaseConnector" condition="@not-condition" name="hsql-memory-database-connector">
+         <db name="trackingdb"/>
+      </processor>
+      <param name="db">
+         <attr name="file"/>
+      </param>
+      <block name="optional-string-param" spec="org.conqat.engine.commons.OptionalStringParam">
+         <default value="db.hsql"/>
+         <actual value="@db.file"/>
       </block>
-      <block condition="@clone.shaped" name="java-shaped-configuration" spec="com.mpdeimos.ct_tests.JavaShapedConfiguration">
-         <clone min-length="@clone.minlength"/>
+      <processor class="com.mpdeimos.ct_tests.processors.DatabaseConnectionSelector" name="database-connection-selector">
+         <db connection="@hsql-database-connector"/>
+         <db connection="@hsql-memory-database-connector"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.bool.NotCondition" name="not-condition">
+         <input value="@optional-string-param.parameter-present"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.defaults.BooleanDefaultsProcessor" name="boolean-defaults-processor">
+         <default value="@flags.write-interim-results"/>
+      </processor>
+      <param name="result">
+         <attr name="list"/>
+      </param>
+      <param name="language">
+         <attr name="name"/>
+      </param>
+      <block name="configuration-factory" spec="com.mpdeimos.ct_tests.ConfigurationFactory">
+         <clone min-length="@clone.minlength" shaped="@clone.shaped"/>
+         <language name="@string-defaults-processor"/>
       </block>
-      <processor class="org.conqat.engine.commons.bool.NotCondition" name="not-shaped">
-         <input value="@clone.shaped"/>
+      <processor class="org.conqat.engine.commons.defaults.StringDefaultsProcessor" name="string-defaults-processor">
+         <default value="JAVA"/>
+         <actual value="@language.name"/>
       </processor>
    </block-spec>
    <meta type="cq.edit">
@@ -89,19 +113,16 @@
       <entries namespace="revision-looper">
          <entry key="pos" value="-48,504"/>
       </entries>
-      <entries namespace="db">
+      <entries namespace="dd">
          <entry key="pos" value="468,132"/>
          <entry key="edges_invisible" value="false"/>
       </entries>
       <entries namespace="flags">
          <entry key="pos" value="408,48"/>
-         <entry key="edges_invisible" value="true"/>
+         <entry key="edges_invisible" value="false"/>
       </entries>
       <entries namespace="in-memory-clone-index-store-factory">
          <entry key="pos" value="276,132"/>
-      </entries>
-      <entries namespace="pattern">
-         <entry key="pos" value="-300,276"/>
       </entries>
       <entries namespace="directory-revision-looper">
          <entry key="pos" value="-108,132"/>
@@ -113,10 +134,10 @@
          <entry key="pos" value="-300,132"/>
       </entries>
       <entries namespace="hsql-database-connector">
-         <entry key="pos" value="468,228"/>
+         <entry key="pos" value="468,276"/>
       </entries>
       <entries namespace="database-space-factory">
-         <entry key="pos" value="468,300"/>
+         <entry key="pos" value="384,420"/>
       </entries>
       <entries namespace="projectName">
          <entry key="pos" value="24,48"/>
@@ -126,7 +147,7 @@
          <entry key="pos" value="660,132"/>
       </entries>
       <entries namespace="always-true-condition2">
-         <entry key="pos" value="660,216"/>
+         <entry key="pos" value="660,228"/>
       </entries>
       <entries namespace="report">
          <entry key="pos" value="0,612"/>
@@ -141,14 +162,35 @@
          <entry key="pos" value="-312,48"/>
          <entry key="edges_invisible" value="true"/>
       </entries>
-      <entries namespace="java-configuration">
-         <entry key="pos" value="-408,204"/>
+      <entries namespace="hsql-memory-database-connector">
+         <entry key="pos" value="276,276"/>
       </entries>
-      <entries namespace="java-shaped-configuration">
-         <entry key="pos" value="-216,204"/>
+      <entries namespace="db">
+         <entry key="pos" value="563,45"/>
       </entries>
-      <entries namespace="not-shaped">
-         <entry key="pos" value="-600,204"/>
+      <entries namespace="optional-string-param">
+         <entry key="pos" value="672,48"/>
+      </entries>
+      <entries namespace="database-connection-selector">
+         <entry key="pos" value="384,348"/>
+      </entries>
+      <entries namespace="not-condition">
+         <entry key="pos" value="276,216"/>
+      </entries>
+      <entries namespace="boolean-defaults-processor">
+         <entry key="pos" value="14,292"/>
+      </entries>
+      <entries namespace="result">
+         <entry key="pos" value="-456,48"/>
+      </entries>
+      <entries namespace="language">
+         <entry key="pos" value="-586,48"/>
+      </entries>
+      <entries namespace="configuration-factory">
+         <entry key="pos" value="-480,192"/>
+      </entries>
+      <entries namespace="string-defaults-processor">
+         <entry key="pos" value="-576,120"/>
       </entries>
    </meta>
 </conqat>

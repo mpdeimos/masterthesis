@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.HSQLFileConnection">
+      <processor class="org.conqat.engine.persistence.HSQLDatabaseConnector" condition="@always-true-condition2" name="hsql-database-connector">
+         <file path="@dd"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="dd">
+         <part string="@part.string"/>
+         <separator string="/"/>
+         <part string="db.hsql"/>
+      </processor>
+      <processor class="com.mpdeimos.ct_tests.processors.DeleteFiles" name="delete-files">
+         <delete file="db.hsql" path="@delete.path"/>
+      </processor>
+      <processor class="com.mpdeimos.ct_tests.processors.AlwaysTrueCondition" name="always-true-condition2">
+         <input param="@delete-files"/>
+      </processor>
+      <param name="part">
+         <attr name="string"/>
+      </param>
+      <param name="delete">
+         <attr name="path"/>
+      </param>
+      <out name="hsqldatabaseconnector" ref="@hsql-database-connector"/>
+      <out name="alwaystruecondition" ref="@always-true-condition2"/>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="hsql-database-connector">
+         <entry key="pos" value="468,228"/>
+      </entries>
+      <entries namespace="dd">
+         <entry key="pos" value="468,132"/>
+         <entry key="edges_invisible" value="false"/>
+      </entries>
+      <entries namespace="delete-files">
+         <entry key="pos" value="660,132"/>
+      </entries>
+      <entries namespace="always-true-condition2">
+         <entry key="pos" value="660,228"/>
+      </entries>
+   </meta>
+</conqat>

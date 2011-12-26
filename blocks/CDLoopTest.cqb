@@ -6,10 +6,11 @@
 <conqat xmlns="http://conqat.cs.tum.edu/ns/config">
    <block-spec name="com.mpdeimos.ct_tests.CDLoopTest">
       <block name="cd-loop" spec="com.mpdeimos.ct_tests.CDLoop">
-         <flags traditional-clone-detection="@flags.traditional-clone-detection"/>
          <dir is-git="@dir.is-git" out="@dir.out" src="@dir.src"/>
          <limit end="@limit.end" start="@limit.start"/>
          <clone minlength="@clone.minlength" shaped="@clone.shaped"/>
+         <flags traditional-clone-detection="@flags.traditional-clone-detection" write-interim-results="true"/>
+         <result list="@detection-list-creator"/>
       </block>
       <param name="dir">
          <attr name="src">
@@ -21,8 +22,8 @@
       <param name="flags">
          <attr name="traditional-clone-detection"/>
       </param>
-      <processor class="com.mpdeimos.ct_tests.processors.CloneDetectionResultPicker" name="clone-detection-result-picker">
-         <list index="@integer-defaults-processor" ref="@cd-loop.report"/>
+      <processor class="com.mpdeimos.ct_tests.processors.CloneDetectionResultPicker" condition="@always-true-condition" name="last-result">
+         <list index="@integer-defaults-processor" ref="@detection-list-creator"/>
       </processor>
       <processor class="org.conqat.engine.commons.string.Concatenator" name="group-id">
          <part string="Clone Churn [since "/>
@@ -39,14 +40,14 @@
       </block>
       <block name="clone-churn" spec="org.conqat.engine.ccsm.clonedetective.tracking.CloneChurn">
          <baseline date="@clone-detection-result-date-extractor2"/>
-         <tracked clones="@clone-detection-result-picker"/>
+         <tracked clones="@last-result"/>
          <database space="@cd-loop.database"/>
       </block>
-      <processor class="com.mpdeimos.ct_tests.processors.CloneDetectionResultPicker" name="clone-detection-result-picker2">
-         <list index="@integer-defaults-processor2" ref="@cd-loop.report"/>
+      <processor class="com.mpdeimos.ct_tests.processors.CloneDetectionResultPicker" condition="@always-true-condition" name="pre-last-result">
+         <list index="@integer-defaults-processor2" ref="@detection-list-creator"/>
       </processor>
       <processor class="com.mpdeimos.ct_tests.processors.CloneDetectionResultDateExtractor" name="clone-detection-result-date-extractor2">
-         <clone report="@clone-detection-result-picker2"/>
+         <clone report="@first-result"/>
       </processor>
       <param name="limit">
          <attr name="start"/>
@@ -65,18 +66,25 @@
          <actual value="@eval.reference"/>
       </processor>
       <processor class="org.conqat.engine.clone_tracking.TrackingClassifier" name="tracking-classifier">
-         <detectionresult new="@clone-detection-result-picker"/>
+         <detectionresult new="@last-result"/>
          <input ref="@clone-churn.removed-clones"/>
          <output dir="@dir.out"/>
       </processor>
       <processor class="org.conqat.engine.code_clones.result.CloneReportWriterProcessor" name="clone-report-writer-processor">
          <output dir="@dir.out" report-name="clones-tracked.xml"/>
-         <detection-result ref="@clone-detection-result-picker"/>
+         <detection-result ref="@last-result"/>
       </processor>
       <param name="clone">
          <attr name="minlength"/>
          <attr name="shaped"/>
       </param>
+      <processor class="com.mpdeimos.ct_tests.processors.CloneDetectionResultPicker" condition="@always-true-condition" name="first-result">
+         <list index="0" ref="@detection-list-creator"/>
+      </processor>
+      <processor class="com.mpdeimos.ct_tests.processors.DetectionListCreator" name="detection-list-creator"/>
+      <processor class="com.mpdeimos.ct_tests.processors.AlwaysTrueCondition" name="always-true-condition">
+         <input param="@cd-loop.report"/>
+      </processor>
    </block-spec>
    <meta type="cq.edit">
       <entries namespace="cd-loop">
@@ -90,23 +98,23 @@
          <entry key="pos" value="408,60"/>
          <entry key="edges_invisible" value="false"/>
       </entries>
-      <entries namespace="clone-detection-result-picker">
-         <entry key="pos" value="264,240"/>
+      <entries namespace="last-result">
+         <entry key="pos" value="264,300"/>
       </entries>
       <entries namespace="group-id">
-         <entry key="pos" value="36,372"/>
+         <entry key="pos" value="36,432"/>
       </entries>
       <entries namespace="clone-churn-output">
-         <entry key="pos" value="264,432"/>
+         <entry key="pos" value="264,492"/>
       </entries>
       <entries namespace="clone-churn">
-         <entry key="pos" value="264,360"/>
+         <entry key="pos" value="264,420"/>
       </entries>
-      <entries namespace="clone-detection-result-picker2">
-         <entry key="pos" value="36,240"/>
+      <entries namespace="pre-last-result">
+         <entry key="pos" value="36,300"/>
       </entries>
       <entries namespace="clone-detection-result-date-extractor2">
-         <entry key="pos" value="36,300"/>
+         <entry key="pos" value="-144,360"/>
       </entries>
       <entries namespace="limit">
          <entry key="pos" value="540,60"/>
@@ -121,13 +129,23 @@
          <entry key="pos" value="-120,144"/>
       </entries>
       <entries namespace="tracking-classifier">
-         <entry key="pos" value="456,504"/>
+         <entry key="pos" value="456,564"/>
       </entries>
       <entries namespace="clone-report-writer-processor">
-         <entry key="pos" value="48,504"/>
+         <entry key="pos" value="48,564"/>
       </entries>
       <entries namespace="clone">
          <entry key="pos" value="-72,60"/>
+      </entries>
+      <entries namespace="first-result">
+         <entry key="pos" value="-144,300"/>
+      </entries>
+      <entries namespace="detection-list-creator">
+         <entry key="pos" value="672,48"/>
+         <entry key="edges_invisible" value="true"/>
+      </entries>
+      <entries namespace="always-true-condition">
+         <entry key="pos" value="264,216"/>
       </entries>
    </meta>
 </conqat>

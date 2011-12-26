@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.ConfigurationFactory">
+      <processor class="org.conqat.engine.commons.bool.NotCondition" name="not-shaped">
+         <input value="@clone.shaped"/>
+      </processor>
+      <block condition="@and-condition" name="java-configuration" spec="com.mpdeimos.ct_tests.JavaConfiguration">
+         <clone min-length="@clone.min-length"/>
+      </block>
+      <block condition="@and-condition2" name="java-shaped-configuration" spec="com.mpdeimos.ct_tests.JavaShapedConfiguration">
+         <clone min-length="@clone.min-length"/>
+      </block>
+      <param name="clone">
+         <attr name="min-length"/>
+         <attr name="shaped"/>
+      </param>
+      <processor class="com.mpdeimos.ct_tests.processors.ConfigurationSelector" name="configuration-selector">
+         <config ref="@java-shaped-configuration.output"/>
+         <config ref="@java-configuration.output"/>
+         <config ref="@cs-shaped-configuration.output"/>
+      </processor>
+      <param name="language">
+         <attr name="name"/>
+      </param>
+      <out name="configuration" ref="@configuration-selector"/>
+      <processor class="com.mpdeimos.ct_tests.processors.StringEquals" name="java">
+         <string ignore-case="true" one="@language.name" other="java"/>
+      </processor>
+      <processor class="com.mpdeimos.ct_tests.processors.StringEquals" name="cs">
+         <string ignore-case="true" one="@language.name" other="cs"/>
+      </processor>
+      <block condition="@cs" name="cs-shaped-configuration" spec="com.mpdeimos.ct_tests.CsShapedConfiguration">
+         <clone min-length="@clone.min-length"/>
+      </block>
+      <processor class="org.conqat.engine.commons.bool.AndCondition" name="and-condition">
+         <input value="@not-shaped"/>
+         <input value="@java"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.bool.AndCondition" name="and-condition2">
+         <input value="@java"/>
+         <input value="@clone.shaped"/>
+      </processor>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="not-shaped">
+         <entry key="pos" value="-396,48"/>
+      </entries>
+      <entries namespace="java-configuration">
+         <entry key="pos" value="-300,324"/>
+      </entries>
+      <entries namespace="java-shaped-configuration">
+         <entry key="pos" value="-120,324"/>
+      </entries>
+      <entries namespace="clone">
+         <entry key="pos" value="-156,48"/>
+      </entries>
+      <entries namespace="configuration-selector">
+         <entry key="pos" value="-216,444"/>
+      </entries>
+      <entries namespace="language">
+         <entry key="pos" value="48,48"/>
+      </entries>
+      <entries namespace="configuration">
+         <entry key="pos" value="-180,564"/>
+      </entries>
+      <entries namespace="java">
+         <entry key="pos" value="-204,204"/>
+      </entries>
+      <entries namespace="cs">
+         <entry key="pos" value="168,204"/>
+      </entries>
+      <entries namespace="cs-shaped-configuration">
+         <entry key="pos" value="168,324"/>
+      </entries>
+      <entries namespace="and-condition">
+         <entry key="pos" value="-300,264"/>
+      </entries>
+      <entries namespace="and-condition2">
+         <entry key="pos" value="-120,264"/>
+      </entries>
+   </meta>
+</conqat>

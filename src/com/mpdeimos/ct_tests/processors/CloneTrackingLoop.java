@@ -17,6 +17,7 @@
 package com.mpdeimos.ct_tests.processors;
 
 import java.io.File;
+import java.lang.ref.SoftReference;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -91,20 +92,20 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	private ICloneIndexStore indexStore;
 
 	private ITokenResource tokenResource;
-	private String includePattern;
 	private String projectName;
 	private RevisionLooperMethodBase revisionLooper;
 	private IDatabaseSpace dbSpace;
 	private PatternList regionIgnorePattern;
 	private CDConfiguration config;
+	private List<CloneDetectionResultElement> cdResultList;
+	private boolean writeInterimResults;
 	
 	@AConQATParameter(name = "project", minOccurrences = 1, maxOccurrences = 1, description = "working directory")
 	public void setFilename(
 			@AConQATAttribute(name = "name", description = "project name", defaultValue="") String projectName,
-			@AConQATAttribute(name = "includePattern", description = "revision root path") String includePattern
+			@AConQATAttribute(name = "includePattern", description = "IGNORED PARAM (TODO REMOVE)") String includePattern // TODO remove
 			) throws ConQATException {
 		this.projectName = projectName;
-		this.includePattern = includePattern;
 	}
 	
 	@AConQATParameter(name = "looper", minOccurrences = 1, maxOccurrences= -1, description = "working directory")
@@ -114,10 +115,19 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		this.revisionLooper = revisionLooper;
 	}
 	
+	
+	@AConQATParameter(name = "result", minOccurrences = 0, description = "detection result")
+	public void setFilename(
+			@AConQATAttribute(name = "list", description = "detection result list") SoftReference<List<CloneDetectionResultElement>> cdResultList
+			) {
+		this.cdResultList = cdResultList.get();
+	}
+	
 	@AConQATParameter(name = "output", minOccurrences = 1, maxOccurrences = 1, description = "TODO")
 	public void setOutput(
-			@AConQATAttribute(name = "path", description = "TODO")
-			String filename) throws ConQATException {
+			@AConQATAttribute(name = "path", description = "TODO") String filename,
+			@AConQATAttribute(name = "write-interim-results", description = "TODO") boolean writeInterimResults) throws ConQATException {
+		this.writeInterimResults = writeInterimResults;
 		this.outDir = new File(filename);
 		if (!outDir.exists())
 			outDir.mkdir();
@@ -158,17 +168,19 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 
 	/** {@inheritDoc} */
 	@Override
-	public List<CloneDetectionResultElement> process() throws ConQATException {
+	public CloneDetectionResultElement process() throws ConQATException {
 		
 		CloneIndex index = new CloneIndex(indexStore, getLogger());
-		List<CloneDetectionResultElement> detectionResults = new ArrayList<CloneDetectionResultElement>();
+		CloneDetectionResultElement detectionResult = null;
 
 		boolean initPhase = true;
 		
 		for (RevisionInfo revision : revisionLooper)
 		{
 			
-			getLogger().info("Processing Revision " + revision.getIndex());
+			getLogger().info("### _______________________________ ###");
+			getLogger().info("### Processing Revision " + revision.getIndex() + " ###");
+			getLogger().info("###");
 			
 			Commit vcsData = revision.getCommit();
 			
@@ -185,21 +197,35 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			loop_updateCloneIndex(index, initPhase, vcsData, resource);
 			initPhase = false;
 			
-			CloneDetectionResultElement detectionResult = loop_runCloneDetection(revision, resource);
-			loop_writeResults(revision, detectionResult, "all-bt");
+			getLogger().info("... index updated");
+			
+			detectionResult = loop_runCloneDetection(revision, resource);
+			if (writeInterimResults)
+			{
+				loop_writeResults(revision, detectionResult, "all-bt");
+			}
+			getLogger().info("... clones detected");
 			
 			CloneDetectionResultElement updatedDetectionResult = loop_cloneTracking(detectionResult);
+			getLogger().info("... clones tracked");
 			
 			KeyValueGateway keyValueGateway = new KeyValueGateway(dbSpace, getLogger()); // TODO member?
 			loop_markReportAndClones(detectionResult, revision, keyValueGateway);
 			
-			detectionResults.add(detectionResult);
-			loop_writeResults(revision, detectionResult, "all");
-			loop_writeResults(revision, updatedDetectionResult, "propagated");
+			getLogger().info("... clones marked");
+			
+			if (cdResultList != null)
+				cdResultList.add(detectionResult);
+			if (writeInterimResults)
+			{
+				loop_writeResults(revision, detectionResult, "all");
+				loop_writeResults(revision, updatedDetectionResult, "propagated");
+			}
+			getLogger().info("... done");
 		}
 		
-		
-		return detectionResults;
+		loop_writeResults(null, detectionResult, "final");
+		return detectionResult;
 	}
 
 	private CloneDetectionResultElement loop_cloneTracking(
@@ -226,7 +252,10 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				Delta<Unit> delta = CloneUtils.getEditOperations(clone);
 				// FIXME hack
 				if (changesetSize(delta) > 0)
+				{
 					clone.setFingerprintLastModified(detectionResult.getSystemDate());
+					EBooleanStoredValue.FINGERPRINT_CHANGED.setValue(clone, true);
+				}
 				// TODO persist to DB?
 				// for now it doesn't make any difference since we're always comparing w/ latest run.
 			}
@@ -284,13 +313,16 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				{
 					for (Clone clone : cloneClass.getClones())
 					{
-						long ancestorId = CloneUtils.getAncestorId(clone);
-						Clone ancestor = lastPotentialBugs.get(ancestorId);
-						if (ancestor != null)
+						if (EBooleanStoredValue.HAS_ANCESTOR.getValue(clone))
 						{
-							bugMessage = (String) ancestor.getValue(BUGSUSPECTION);
-							addSuspection(keyValueGateway, bugMessage, stmt, clone);
-							newPotentialBugs.put(clone.getId(), clone);
+							long ancestorId = CloneUtils.getAncestorId(clone);
+							Clone ancestor = lastPotentialBugs.get(ancestorId);
+							if (ancestor != null)
+							{
+								bugMessage = (String) ancestor.getValue(BUGSUSPECTION);
+								addSuspection(keyValueGateway, bugMessage, stmt, clone);
+								newPotentialBugs.put(clone.getId(), clone);
+							}
 						}
 					}
 				}
@@ -326,6 +358,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		detector.setInput(resource);
 		detector.setStoreFactory(indexStore);
 		detector.setMinLength(config.getCloneMinLength()); // TODO make configurable
+		detector.setDbSpace(dbSpace);
 		config.attachConstraints(detector);
 		CloneDetectionResultElement result = detector.process();
 		result = reattachUnits(result);
@@ -335,6 +368,8 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 
 	/**
 	 * @param result
+	 * 
+	 * TODO should be handled from within CloneIndexDetector
 	 */
 	private CloneDetectionResultElement reattachUnits(CloneDetectionResultElement result) {
 		
@@ -362,7 +397,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 
 	private void loop_writeResults(RevisionInfo revision,
 			CloneDetectionResultElement result, String postfix) throws ConQATException {
-		File outFile = new File(outDir.getPath(),  revision.getIndex() + "clones-" + postfix + ".xml");
+		File outFile = new File(outDir.getPath(), ( revision== null?"":revision.getIndex()) + "clones-" + postfix + ".xml");
 //			CloneListReportWriterProcessor.writeReport(result.getList(), vcsData.getDate(), outFile, getLogger());
 		CloneReportWriterProcessor.writeReport(result.getList(), result.getRoot(), result.getSystemDate(), outFile, getLogger());
 	}
@@ -465,7 +500,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		scopeBuilder.init(infoMock);
 		scopeBuilder.projectName = this.projectName;
 		scopeBuilder.rootDirectoryName = dir.getPath();
-		scopeBuilder.addIncludePattern(this.includePattern);
+		scopeBuilder.addIncludePattern(this.config.getIncludePattern());
 		IContentAccessor[] scope = scopeBuilder.process();
 		
 		ResourceBuilder resourceBuilder = new ResourceBuilder();

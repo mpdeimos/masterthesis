@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------+
 |                                                                          |
-| Copyright 2005-2011 the ConQAT Project                                   |
+| Copyright 2005-2011 The ConQAT Project                                   |
 |                                                                          |
 | Licensed under the Apache License, Version 2.0 (the "License");          |
 | you may not use this file except in compliance with the License.         |
@@ -16,9 +16,7 @@
 +-------------------------------------------------------------------------*/
 package com.mpdeimos.ct_tests.processors;
 
-import java.io.File;
-import java.lang.ref.SoftReference;
-import java.util.List;
+import java.sql.Connection;
 
 import org.conqat.engine.commons.ConQATProcessorBase;
 import org.conqat.engine.core.core.AConQATAttribute;
@@ -27,30 +25,33 @@ import org.conqat.engine.core.core.AConQATProcessor;
 import org.conqat.engine.core.core.ConQATException;
 
 /**
+ * Merges multiple database connections and returns the last assigned one.
  * 
- * @author $Author: $
- * @version $Rev: $
- * @ConQAT.Rating RED Hash:
+ * @author $Author: juergens $
+ * @version $Rev: 35197 $
+ * @ConQAT.Rating GREEN Hash: 0CFDD2DF8A9DDC973AFE934BE0AA122D
  */
-public class ListPicker<T> extends ConQATProcessorBase {
+@AConQATProcessor(description = "Selects the last assigned db connection.")
+public class StringEquals extends ConQATProcessorBase {
 
-	private T picked;
+	private boolean equals;
 
-
-	@AConQATParameter(name = "list", minOccurrences = 1, maxOccurrences = 1, description = "TODO")
-	public void setOutput(
-			@AConQATAttribute(name = "index", description = "TODO") int index,
-			@AConQATAttribute(name = "ref", description = "TODO") SoftReference<List<T>> list
-			) throws ConQATException {
-		picked = list.get().get(index < 0 ? list.get().size() + index : index);
+	/** {@ConQAT.Doc} */
+	@AConQATParameter(name = "string", minOccurrences = 1, description = "")
+	public void setFile(
+			@AConQATAttribute(name = "ignore-case", description = "") boolean ignoreCase,
+			@AConQATAttribute(name = "one", description = "") String one,
+		@AConQATAttribute(name = "other", description = "") String other) {
+		if (ignoreCase)
+			this.equals = one.equalsIgnoreCase(other);
+		else
+			this.equals = one.equals(other);
 	}
-	
-	
-	/** {@inheritDoc} 
-	 * @return */
+
+	/** {@inheritDoc} */
 	@Override
-	public T process()  {
-		return picked;
+	public Boolean process()  {
+		return this.equals;
 	}
 
 }
