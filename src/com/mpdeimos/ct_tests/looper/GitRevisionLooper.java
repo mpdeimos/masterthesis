@@ -135,7 +135,7 @@ public class GitRevisionLooper extends RevisionLooperMethodBase {
 					return null;
 				}
 				
-				return new RevisionInfo(commits.size() - index - 1, commit, root);
+				return new RevisionInfo(commits.size() - index - 1, commit.getId(), commit, root);
 			}
 			
 			@Override

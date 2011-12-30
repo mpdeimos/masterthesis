@@ -14,19 +14,19 @@
 | See the License for the specific language governing permissions and      |
 | limitations under the License.                                           |
 +-------------------------------------------------------------------------*/
-package com.mpdeimos.ct_tests.looper;
+package com.mpdeimos.ct_tests.processors;
 
 import java.io.File;
+import java.util.Date;
+import java.util.List;
 
+import org.conqat.engine.code_clones.core.CloneClass;
+import org.conqat.engine.code_clones.detection.CloneDetectionResultElement;
+import org.conqat.engine.commons.ConQATProcessorBase;
+import org.conqat.engine.core.core.AConQATAttribute;
+import org.conqat.engine.core.core.AConQATParameter;
+import org.conqat.engine.core.core.AConQATProcessor;
 import org.conqat.engine.core.core.ConQATException;
-import org.conqat.engine.resource.IContentAccessor;
-import org.conqat.engine.resource.IResource;
-import org.conqat.engine.resource.build.ResourceBuilder;
-import org.conqat.engine.resource.scope.filesystem.FileSystemScope;
-import org.conqat.engine.sourcecode.resource.ITokenResource;
-import org.conqat.engine.sourcecode.resource.TokenResourceSelector;
-
-import com.mpdeimos.ct_tests.vcs.Commit;
 
 /**
  * 
@@ -34,37 +34,28 @@ import com.mpdeimos.ct_tests.vcs.Commit;
  * @version $Rev: $
  * @ConQAT.Rating RED Hash:
  */
-public class RevisionInfo {
-	
-	private final int index;
-	private final String id;
-	private final Commit commit;
-	private final File path;
-	
-	RevisionInfo(int index, String id, Commit commit, File path)
-	{
-		this.index = index;
-		this.id = id;
-		this.commit = commit;
-		this.path = path;
-		
-	}
-	
-	/** Returns index. */
-	public int getIndex() {
-		return index;
-	}
-	/** Returns id. */
-	public String getID() {
-		return id;
-	}
-	/** Returns commit. */
-	public Commit getCommit() {
-		return commit;
-	}
-	/** Returns path. */
-	public File getPath() {
-		return path;
-	}
+@AConQATProcessor(description = "TODO")
+public class CloneDetectionResultBugSuspectionFilter extends ConQATProcessorBase {
 
+	public static final String BUGSUSPECTION = "bugsuspection";
+	
+	private CloneDetectionResultElement result;
+
+	@AConQATParameter(name = "clone", minOccurrences = 1, maxOccurrences = 1, description = "TODO")
+	public void setOutput(
+			@AConQATAttribute(name = "report", description = "TODO") CloneDetectionResultElement result
+			) throws ConQATException {
+		this.result = result;
+	}
+	
+	public CloneDetectionResultElement process()
+	{
+		for (CloneClass cc : result.getList())
+		{
+			if (!cc.containsValue(BUGSUSPECTION))
+				result.getList().remove(cc);
+		}
+		
+		return result;
+	}
 }

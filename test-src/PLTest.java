@@ -1,3 +1,11 @@
+import static org.junit.Assert.*;
+
+import java.io.File;
+import java.net.URL;
+import java.util.regex.Pattern;
+
+import org.junit.Test;
+
 /*-------------------------------------------------------------------------+
 |                                                                          |
 | Copyright 2005-2011 the ConQAT Project                                   |
@@ -14,19 +22,6 @@
 | See the License for the specific language governing permissions and      |
 | limitations under the License.                                           |
 +-------------------------------------------------------------------------*/
-package com.mpdeimos.ct_tests.looper;
-
-import java.io.File;
-
-import org.conqat.engine.core.core.ConQATException;
-import org.conqat.engine.resource.IContentAccessor;
-import org.conqat.engine.resource.IResource;
-import org.conqat.engine.resource.build.ResourceBuilder;
-import org.conqat.engine.resource.scope.filesystem.FileSystemScope;
-import org.conqat.engine.sourcecode.resource.ITokenResource;
-import org.conqat.engine.sourcecode.resource.TokenResourceSelector;
-
-import com.mpdeimos.ct_tests.vcs.Commit;
 
 /**
  * 
@@ -34,37 +29,14 @@ import com.mpdeimos.ct_tests.vcs.Commit;
  * @version $Rev: $
  * @ConQAT.Rating RED Hash:
  */
-public class RevisionInfo {
-	
-	private final int index;
-	private final String id;
-	private final Commit commit;
-	private final File path;
-	
-	RevisionInfo(int index, String id, Commit commit, File path)
-	{
-		this.index = index;
-		this.id = id;
-		this.commit = commit;
-		this.path = path;
-		
-	}
-	
-	/** Returns index. */
-	public int getIndex() {
-		return index;
-	}
-	/** Returns id. */
-	public String getID() {
-		return id;
-	}
-	/** Returns commit. */
-	public Commit getCommit() {
-		return commit;
-	}
-	/** Returns path. */
-	public File getPath() {
-		return path;
+public class PLTest {
+
+	@Test
+	public void testMatch() {
+//		System.out.println(("abc".substring(0,Math.min(3, 100))));
+//		File f = new File(this.getClass().getResource("test").toURI());
+		assertTrue(Pattern.compile("(?i)(.|\n)*(fix|bug|defe(c|k)t|fehler|behoben)(.|\n)*").matcher("a bukFx for defekkt relas\nblaa\ngrrr\nbug\nbkla\nbug").matches());
+//		assertTrue(Pattern.compile("(?i)(.|\n)*(fix|bug|defe(c|k)t|fehler|behoben)(.|\n)*").matcher(f.).matches());
 	}
 
 }

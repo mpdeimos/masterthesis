@@ -21,6 +21,7 @@
          <output path="@dir.out" write-interim-results="@boolean-defaults-processor"/>
          <result list="@result.list"/>
          <configuration ref="@configuration-factory.configuration"/>
+         <message-analyzer pattern="@pattern-list-def"/>
       </processor>
       <processor class="org.conqat.engine.commons.string.Concatenator" condition="@optional-string-param.parameter-present" name="dd">
          <part string="@dir.out"/>
@@ -102,6 +103,17 @@
          <default value="JAVA"/>
          <actual value="@language.name"/>
       </processor>
+      <processor class="org.conqat.engine.commons.pattern.PatternListDef" name="pattern-list-def">
+         <pattern regex="(?i)(.|\n)*(fix|bug|defe(c|k)t|fehler|behoben)(.|\n)*"/>
+      </processor>
+      <processor class="com.mpdeimos.ct_tests.processors.CloneDetectionResultBugSuspectionFilter" name="clone-detection-result-bug-suspection-filter">
+         <clone report="@revision-looper"/>
+      </processor>
+      <processor class="org.conqat.engine.code_clones.result.CloneReportWriterProcessor" name="clone-report-writer-processor">
+         <output dir="@dir.out" report-name="clones-suspecious.xml"/>
+         <detection-result ref="@clone-detection-result-bug-suspection-filter"/>
+      </processor>
+      <out name="suspecious-report" ref="@clone-report-writer-processor"/>
    </block-spec>
    <meta type="cq.edit">
       <entries namespace="dir">
@@ -191,6 +203,18 @@
       </entries>
       <entries namespace="string-defaults-processor">
          <entry key="pos" value="-576,120"/>
+      </entries>
+      <entries namespace="pattern-list-def">
+         <entry key="pos" value="-468,300"/>
+      </entries>
+      <entries namespace="clone-detection-result-bug-suspection-filter">
+         <entry key="pos" value="-420,492"/>
+      </entries>
+      <entries namespace="clone-report-writer-processor">
+         <entry key="pos" value="-420,552"/>
+      </entries>
+      <entries namespace="suspecious-report">
+         <entry key="pos" value="-384,624"/>
       </entries>
    </meta>
 </conqat>

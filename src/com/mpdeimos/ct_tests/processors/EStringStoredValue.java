@@ -14,19 +14,11 @@
 | See the License for the specific language governing permissions and      |
 | limitations under the License.                                           |
 +-------------------------------------------------------------------------*/
-package com.mpdeimos.ct_tests.looper;
+package com.mpdeimos.ct_tests.processors;
 
-import java.io.File;
-
-import org.conqat.engine.core.core.ConQATException;
-import org.conqat.engine.resource.IContentAccessor;
-import org.conqat.engine.resource.IResource;
-import org.conqat.engine.resource.build.ResourceBuilder;
-import org.conqat.engine.resource.scope.filesystem.FileSystemScope;
-import org.conqat.engine.sourcecode.resource.ITokenResource;
-import org.conqat.engine.sourcecode.resource.TokenResourceSelector;
-
-import com.mpdeimos.ct_tests.vcs.Commit;
+import org.conqat.engine.code_clones.core.KeyValueStoreBase;
+import org.conqat.engine.code_clones.detection.CloneDetectionResultElement;
+import org.conqat.engine.commons.node.IConQATNode;
 
 /**
  * 
@@ -34,37 +26,37 @@ import com.mpdeimos.ct_tests.vcs.Commit;
  * @version $Rev: $
  * @ConQAT.Rating RED Hash:
  */
-public class RevisionInfo {
+public enum EStringStoredValue {
 	
-	private final int index;
-	private final String id;
-	private final Commit commit;
-	private final File path;
+	BUGSUSPECTION("bugsuspection");
 	
-	RevisionInfo(int index, String id, Commit commit, File path)
+	private String key;
+	
+	private EStringStoredValue(String key)
 	{
-		this.index = index;
-		this.id = id;
-		this.commit = commit;
-		this.path = path;
-		
+		this.key = key;
 	}
 	
-	/** Returns index. */
-	public int getIndex() {
-		return index;
+	public void set(KeyValueStoreBase kv, String value)
+	{
+		kv.setValue(key, value);
 	}
-	/** Returns id. */
-	public String getID() {
-		return id;
-	}
-	/** Returns commit. */
-	public Commit getCommit() {
-		return commit;
-	}
-	/** Returns path. */
-	public File getPath() {
-		return path;
+	
+	public String get(KeyValueStoreBase kv)
+	{
+		return kv.getString(key);
 	}
 
+	public void mark(IConQATNode node) {
+		node.setValue(key, true);
+	}
+	public boolean isMarked(IConQATNode node) {
+		Object o = node.getValue(key);
+		return (o != null);
+	}
+	
+	public String getKey()
+	{
+		return key;
+	}
 }

@@ -50,6 +50,7 @@ import org.conqat.engine.commons.ConQATParamDoc;
 import org.conqat.engine.commons.ConQATProcessorBase;
 import org.conqat.engine.commons.pattern.PatternList;
 import org.conqat.engine.core.core.AConQATAttribute;
+import org.conqat.engine.core.core.AConQATFieldParameter;
 import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
 import org.conqat.engine.core.core.ConQATException;
@@ -86,7 +87,6 @@ import com.mpdeimos.ct_tests.vcs.Commit;
 @AConQATProcessor(description = "TODO")
 public class CloneTrackingLoop extends ConQATProcessorBase  {
 
-	private static final String BUGSUSPECTION = "bugsuspection";
 	private File baseDir;
 	private File outDir;
 	private ICloneIndexStore indexStore;
@@ -99,6 +99,10 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	private CDConfiguration config;
 	private List<CloneDetectionResultElement> cdResultList;
 	private boolean writeInterimResults;
+	
+	
+	@AConQATFieldParameter(parameter="message-analyzer", attribute="pattern", description="")
+	public PatternList messageAnanlyzerPattern;
 	
 	@AConQATParameter(name = "project", minOccurrences = 1, maxOccurrences = 1, description = "working directory")
 	public void setFilename(
@@ -169,63 +173,79 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	/** {@inheritDoc} */
 	@Override
 	public CloneDetectionResultElement process() throws ConQATException {
-		
-		CloneIndex index = new CloneIndex(indexStore, getLogger());
-		CloneDetectionResultElement detectionResult = null;
-
-		boolean initPhase = true;
-		
-		for (RevisionInfo revision : revisionLooper)
+		try
 		{
+			CloneIndex index = new CloneIndex(indexStore, getLogger());
+			CloneDetectionResultElement detectionResult = null;
+	
+			boolean initPhase = true;
 			
-			getLogger().info("### _______________________________ ###");
-			getLogger().info("### Processing Revision " + revision.getIndex() + " ###");
-			getLogger().info("###");
-			
-			Commit vcsData = revision.getCommit();
-			
-			getLogger().info("Commit id: " + vcsData.getId());
-			getLogger().info("Commit message: " + vcsData.getMessage());
-			getLogger().info("Commit files: " + vcsData.getAdded().size());
-			for(String file : vcsData.getAdded())
+			for (RevisionInfo revision : revisionLooper)
 			{
-				getLogger().info("    " + file);
+				
+				getLogger().debug("### _______________________________ ###");
+				getLogger().info("### Processing Revision " + revision.getIndex() + " ### " + revision.getID() + " ### ");
+				infoMock.getLogger().info("### Processing Revision " + revision.getIndex() + " ### " + revision.getID() + " ### ");
+				getLogger().debug("###");
+				
+				Commit vcsData = revision.getCommit();
+				
+				getLogger().debug("Commit id: " + vcsData.getId());
+				getLogger().debug("Commit message: " + vcsData.getMessage());
+				getLogger().debug("Commit files: " + vcsData.getAdded().size());
+				for(String file : vcsData.getAdded())
+				{
+					getLogger().debug("    " + file);
+				}
+				
+				ITokenResource resource = loop_buildTokenScope(revision.getPath());
+				
+				loop_updateCloneIndex(index, initPhase, vcsData, resource);
+				initPhase = false;
+				
+				getLogger().info("... index updated");
+				
+				detectionResult = loop_runCloneDetection(revision, resource);
+				if (writeInterimResults)
+				{
+					loop_writeResults(revision, detectionResult, "all-bt");
+				}
+				getLogger().info("... clones detected");
+				
+				CloneDetectionResultElement updatedDetectionResult = loop_cloneTracking(detectionResult);
+				getLogger().info("... clones tracked");
+				
+				KeyValueGateway keyValueGateway = new KeyValueGateway(dbSpace, getLogger()); // TODO member?
+				boolean newBugs = loop_markReportAndClones(detectionResult, revision, keyValueGateway);
+				
+				getLogger().info("... clones marked");
+				
+				if (cdResultList != null)
+					cdResultList.add(detectionResult);
+				if (writeInterimResults)
+				{
+					loop_writeResults(revision, detectionResult, "all");
+					loop_writeResults(revision, updatedDetectionResult, "propagated");
+				}
+				
+				if (newBugs)
+				{
+					loop_writeResults(revision, detectionResult, "suspect");
+				}
+				
+				getLogger().info("... done");
 			}
 			
-			ITokenResource resource = loop_buildTokenScope(revision.getPath());
+			if (detectionResult != null)
+					loop_writeResults(null, detectionResult, "final");
 			
-			loop_updateCloneIndex(index, initPhase, vcsData, resource);
-			initPhase = false;
-			
-			getLogger().info("... index updated");
-			
-			detectionResult = loop_runCloneDetection(revision, resource);
-			if (writeInterimResults)
-			{
-				loop_writeResults(revision, detectionResult, "all-bt");
-			}
-			getLogger().info("... clones detected");
-			
-			CloneDetectionResultElement updatedDetectionResult = loop_cloneTracking(detectionResult);
-			getLogger().info("... clones tracked");
-			
-			KeyValueGateway keyValueGateway = new KeyValueGateway(dbSpace, getLogger()); // TODO member?
-			loop_markReportAndClones(detectionResult, revision, keyValueGateway);
-			
-			getLogger().info("... clones marked");
-			
-			if (cdResultList != null)
-				cdResultList.add(detectionResult);
-			if (writeInterimResults)
-			{
-				loop_writeResults(revision, detectionResult, "all");
-				loop_writeResults(revision, updatedDetectionResult, "propagated");
-			}
-			getLogger().info("... done");
+				return detectionResult;
 		}
-		
-		loop_writeResults(null, detectionResult, "final");
-		return detectionResult;
+		catch (ConQATException e)
+		{
+			getLogger().error("FAIL", e);
+			throw e;
+		}
 	}
 
 	private CloneDetectionResultElement loop_cloneTracking(
@@ -275,39 +295,42 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	}
 
 	private HashMap<Long, Clone> lastPotentialBugs = new HashMap<Long, Clone>();
+
 	
 	/**
 	 * @param detectionResult
 	 * @param revision
 	 * @param keyValueGateway 
 	 */
-	private void loop_markReportAndClones(CloneDetectionResultElement detectionResult,
+	private boolean loop_markReportAndClones(CloneDetectionResultElement detectionResult,
 			RevisionInfo revision, KeyValueGateway keyValueGateway) throws ConQATException {
 		try
 		{
 			HashMap<Long, Clone> newPotentialBugs = new HashMap<Long, Clone>();
 			String message = revision.getCommit().getMessage();
+			message = message.substring(0,Math.min(message.length(), 1000));
 			Statement stmt = dbSpace.getDbConnection().createStatement();
-			
-			boolean potentialBug = StringUtils.containsOneOf(message.toLowerCase(), "fix", "#", "cr");
+			boolean potentialBug = messageAnanlyzerPattern.matchesAny(message); // FIXME case sensitive?
+			boolean newBugs = false;
 			for (CloneClass cloneClass : detectionResult.getList())
 			{
 				if (EBooleanStoredValue.GHOST.falseForAllClones(cloneClass)) // no propagation needed
 					continue;
 				
 				String bugMessage = null;
-				if (potentialBug)
-				{
 //					if (ECloneClassChange.INCONSISTENT == CloneUtils.getChangeType(cloneClass))
 //					if (!EBooleanStoredValue.GHOST.falseForAllClones(cloneClass)) // inconsistent
-//					{
-						bugMessage = message;
-						for (Clone clone : cloneClass.getClones())
-						{
-							addSuspection(keyValueGateway, message, stmt, clone);
-							newPotentialBugs.put(clone.getId(), clone);
-						}
-//					}
+		
+				// if something has changed update w/ new suspection message /// XXX what to do w/ old message?
+				if (potentialBug && EBooleanStoredValue.FINGERPRINT_CHANGED.trueForAtLeastOneClone(cloneClass)) // inconsistent
+				{
+					bugMessage = message;
+					for (Clone clone : cloneClass.getClones())
+					{
+						addSuspection(keyValueGateway, message, stmt, clone);
+						newPotentialBugs.put(clone.getId(), clone);
+					}
+					newBugs = true;
 				}
 				else
 				{
@@ -319,7 +342,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 							Clone ancestor = lastPotentialBugs.get(ancestorId);
 							if (ancestor != null)
 							{
-								bugMessage = (String) ancestor.getValue(BUGSUSPECTION);
+								bugMessage = EStringStoredValue.BUGSUSPECTION.get(ancestor);
 								addSuspection(keyValueGateway, bugMessage, stmt, clone);
 								newPotentialBugs.put(clone.getId(), clone);
 							}
@@ -329,13 +352,15 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				
 				if (bugMessage != null)
 				{
-					detectionResult.setValue(BUGSUSPECTION, true);
+					EStringStoredValue.BUGSUSPECTION.mark(detectionResult);
 					addSuspection(keyValueGateway, bugMessage, stmt, cloneClass);
 				}
 			}
 			
 			DatabaseUtils.executeAndClose(stmt);
 			this.lastPotentialBugs = newPotentialBugs;
+			
+			return newBugs;
 		}
 		catch (SQLException e)
 		{
@@ -345,8 +370,8 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 
 	private void addSuspection(KeyValueGateway keyValueGateway, String message,
 			Statement stmt, KeyValueStoreBase kv) throws SQLException {
-		kv.setValue(BUGSUSPECTION, message);
-		stmt.addBatch(keyValueGateway.createInsertValueSql(kv.getId(), BUGSUSPECTION, message));
+		EStringStoredValue.BUGSUSPECTION.set(kv, message);
+		stmt.addBatch(keyValueGateway.createInsertValueSql(kv.getId(), EStringStoredValue.BUGSUSPECTION.getKey(), message));
 	}
 
 	private CloneDetectionResultElement loop_runCloneDetection(RevisionInfo revision, ITokenResource resource)

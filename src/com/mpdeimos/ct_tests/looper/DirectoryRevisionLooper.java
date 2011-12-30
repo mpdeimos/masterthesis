@@ -82,7 +82,7 @@ public class DirectoryRevisionLooper extends RevisionLooperMethodBase {
 				File path = subDirs[++index];
 				Commit commit = new Commit(path.getPath()+"/vcs.data");
 				
-				return new RevisionInfo(index, commit, path);
+				return new RevisionInfo(index, Integer.toString(index), commit, path);
 			}
 
 			@Override
