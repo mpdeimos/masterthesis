@@ -67,9 +67,9 @@ public class DirectoryRevisionLooper extends RevisionLooperMethodBase {
 
 	/** {@inheritDoc} */
 	@Override
-	public Iterator<RevisionInfo> iterator() {
+	public RevIterator iterator() {
 		
-		return new Iterator<RevisionInfo>() {
+		return new RevIterator() {
 			int index = -1;
 
 			@Override
@@ -88,6 +88,16 @@ public class DirectoryRevisionLooper extends RevisionLooperMethodBase {
 			@Override
 			public void remove() {
 				throw new IllegalStateException();
+			}
+
+			@Override
+			public String peekMessage() {
+				if (!hasNext())
+					throw new IllegalStateException();
+				
+				File path = subDirs[index+1];
+				Commit commit = new Commit(path.getPath()+"/vcs.data");
+				return commit.getMessage();
 			}
 		};
 	}

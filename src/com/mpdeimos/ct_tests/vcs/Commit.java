@@ -71,6 +71,16 @@ public class Commit {
 		this.modified = Arrays.asList(modified);
 		this.deleted = Arrays.asList(deleted);
 	}
+	/** Constructor. */
+	public Commit(String id, Date date, String message, List<String> added, List<String> deleted, List<String> modified)
+	{
+		this.revision = id;
+		this.date = date;
+		this.message = message;
+		this.added = added;
+		this.modified = modified;
+		this.deleted = deleted;
+	}
 	
 	/** Constructor. */
 	public Commit(GitChange change)

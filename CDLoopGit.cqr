@@ -1,10 +1,11 @@
 #!com.mpdeimos.ct_tests.CDLoop
 limit.start=null
-limit.end=bug
+limit.end=second-clone
 clone.minlength=7
 clone.shaped=false
 flags.traditional-clone-detection=false
-flags.write-interim-results=true
+flags.write-interim-results=false
 dir.is-git=true
 dir.src=/home/mpdeimos/workspaces/cq/ct_data/src/b
 dir.out=/home/mpdeimos/workspaces/cq/ct_data/out/b
+compress.enable=true

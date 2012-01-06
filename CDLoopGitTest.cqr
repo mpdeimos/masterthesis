@@ -1,7 +1,9 @@
 #!com.mpdeimos.ct_tests.CDLoopTest
+limit.start=null
+limit.end=HEAD
 flags.traditional-clone-detection=false
 dir.is-git=true
 dir.src=/home/mpdeimos/workspaces/cq/ct_data/src/b
 dir.out=/home/mpdeimos/workspaces/cq/ct_data/out/b
-limit.start=null
-limit.end=HEAD
+clone.minlength=7
+clone.shaped=true

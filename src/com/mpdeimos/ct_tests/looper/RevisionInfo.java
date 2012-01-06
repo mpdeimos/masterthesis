@@ -62,8 +62,9 @@ public class RevisionInfo {
 	public Commit getCommit() {
 		return commit;
 	}
-	/** Returns path. */
-	public File getPath() {
+	/** Returns path. 
+	 * @throws ConQATException */
+	public File getPath() throws ConQATException {
 		return path;
 	}
 

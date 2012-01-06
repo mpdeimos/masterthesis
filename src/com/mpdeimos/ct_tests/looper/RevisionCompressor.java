@@ -18,11 +18,14 @@ package com.mpdeimos.ct_tests.looper;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
 import org.apache.commons.collections.iterators.ArrayListIterator;
+import org.conqat.engine.commons.pattern.PatternList;
 import org.conqat.engine.core.core.AConQATAttribute;
 import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
@@ -44,78 +47,50 @@ import com.mpdeimos.ct_tests.vcs.GitCommitListFilter;
  * @ConQAT.Rating RED Hash:
  */
 @AConQATProcessor(description = "TODO")
-public class GitRevisionLooper extends RevisionLooperMethodBase {
+public class RevisionCompressor extends RevisionLooperMethodBase {
 	
-	private File root;
-	private List<Commit> commits;
-	private FileRepository repository;
-	private String endRef = "HEAD";
-	private String startRef = null;
+	private RevisionLooperMethodBase looper;
+	private PatternList pl;
+	private boolean enable;
 	
-	@AConQATParameter(name = "directory", minOccurrences = 1, maxOccurrences = 1, description = "working directory")
-	public void setRoot(
-			@AConQATAttribute(name = "path", description = "git checkout path") String filename
+	@AConQATParameter(name = "revision-looper", minOccurrences = 1, description = "")
+	public void setLooper(
+			@AConQATAttribute(name = "ref", description = "") RevisionLooperMethodBase looper
 			) throws ConQATException {
-		this.root = new File(filename);
-		if (!this.root.isDirectory())
-			throw new ConQATException(filename + " needs to be a directory.");
-		
-		
-		try {
-			FileRepositoryBuilder builder = new FileRepositoryBuilder();
-			repository = builder.setWorkTree(this.root).build();
-		} catch (IOException e) {
-			throw new ConQATException(filename + "/.git needs to be a directory.");
-		}
+				this.looper = looper;
 	}
 	
-	@AConQATParameter(name = "limit", maxOccurrences = 1, description = "working directory")
-	public void setLimits(
-			@AConQATAttribute(name = "start", description = "start ref (default null)", defaultValue="null") String start,
-			@AConQATAttribute(name = "end", description = "end ref (default HEAD)", defaultValue="HEAD") String end
+	@AConQATParameter(name = "include", maxOccurrences = 1, description = "")
+	public void setPL(
+			@AConQATAttribute(name = "pattern", description = "") PatternList pl
 			) throws ConQATException {
+				this.pl = pl;
 		
-		if (!StringUtils.isEmpty(start) && !start.equalsIgnoreCase("null"))
-			this.startRef = start;
+	}
+	
+	@AConQATParameter(name = "compress", maxOccurrences = 1, description = "")
+	public void setCompress(
+			@AConQATAttribute(name = "enable", description = "") boolean enable
+			) throws ConQATException {
+		this.enable = enable;
 		
-		if (!StringUtils.isEmpty(end) && !end.equalsIgnoreCase("null"))
-			this.endRef = end;
 	}
 
 	/** {@inheritDoc} */
 	@Override
 	protected void onProcess() throws ConQATException {
-		try
-		{
-			ObjectId end = repository.resolve(this.endRef);
-			repository.resolve(this.endRef);
-			
-			CommitFinder finder = new CommitFinder(repository);
-			GitCommitListFilter filter = new GitCommitListFilter();
-			finder.setFilter(filter);
-			if (this.startRef != null)
-			{
-				ObjectId start = repository.resolve(this.startRef);
-				finder.findBetween(end, start); // reversed!
-			}
-			else
-			{
-				finder.findFrom(end);
-			}
-			commits = filter.getCommits();
-		}
-		catch (Exception e)
-		{
-			throw new ConQATException(e);
-		}
 	}
 	
 	/** {@inheritDoc} */
 	@Override
 	public RevIterator iterator() {
+		if (!enable)
+			return looper.iterator();
 		
 		return new RevIterator() {
-			int index = commits.size();
+			
+			RevIterator iterator = looper.iterator();
+			boolean nextOfInterest = false;
 			
 			@Override
 			public void remove() {
@@ -124,42 +99,82 @@ public class GitRevisionLooper extends RevisionLooperMethodBase {
 			
 			@Override
 			public RevisionInfo next() {
-				final Commit commit = commits.get(--index);
+				if (SuspectionOracle.isSuspicious(pl, iterator.peekMessage()))
+				{
+					return iterator.next();
+				}
 				
-				return new RevisionInfo(commits.size() - index - 1, commit.getId(), commit, root)
+				HashMap<String, EChangeType> map = new HashMap<String, EChangeType>();
+				Commit c = null;
+				RevisionInfo next = null;
+				while (iterator.hasNext())
+				{
+					next = iterator.next();
+					
+					c = next.getCommit();
+					
+					for (String s : c.getAdded())
+						map.put(s, EChangeType.ADDED);
+					for (String s : c.getDeleted())
+						map.put(s, EChangeType.DELETED);
+					for (String s : c.getModified())
+						map.put(s, EChangeType.MODIFIED);
+							
+					// interesting commit
+					if (iterator.hasNext() && SuspectionOracle.isSuspicious(pl, iterator.peekMessage()))
+						break;
+				}
+				
+				final RevisionInfo last = next;
+				
+				List<String> added = new ArrayList<String>();
+				List<String> deleted = new ArrayList<String>();
+				List<String> modified = new ArrayList<String>();
+				for (String s : map.keySet())
+				{
+					switch(map.get(s))
+					{
+					case ADDED:
+						added.add(s);
+						break;
+					case DELETED:
+						deleted.add(s);
+						break;
+					case MODIFIED:
+						modified.add(s);
+						break;
+					}
+				}
+				
+				// ignore NPEs
+				Commit compound = new Commit(c.getId(), c.getDate(), c.getMessage(), added, deleted, modified);
+				return new RevisionInfo(next.getIndex(), compound.getId(), compound, null)
 				{
 					/** {@inheritDoc} 
 					 * @throws ConQATException */
 					@Override
 					public File getPath() throws ConQATException {
-						CheckoutCommand checkout = new CheckoutCommand(repository) {/**/};
-						checkout.setName(commit.getId());
-						try {
-							checkout.call();
-						} catch (Exception e) {
-							getLogger().error(e);
-							throw new ConQATException(e);
-						}
-						return super.getPath();
+						return last.getPath();
 					}
 				};
+				
 			}
 			
 			@Override
 			public boolean hasNext() {
-				return index > 0;
+				return iterator.hasNext();
 			}
 
 			@Override
 			public String peekMessage() {
-				if (!hasNext())
-					throw new IllegalStateException();
-				
-				Commit commit = commits.get(index-1);
-				return commit.getMessage();
+				return iterator.peekMessage();
 			}
 		};
 	}
 
+	private enum EChangeType
+	{
+		ADDED, DELETED, MODIFIED;
+	}
 
 }

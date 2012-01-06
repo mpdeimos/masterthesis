@@ -1,11 +1,3 @@
-import static org.junit.Assert.*;
-
-import java.io.File;
-import java.net.URL;
-import java.util.regex.Pattern;
-
-import org.junit.Test;
-
 /*-------------------------------------------------------------------------+
 |                                                                          |
 | Copyright 2005-2011 the ConQAT Project                                   |
@@ -22,6 +14,9 @@ import org.junit.Test;
 | See the License for the specific language governing permissions and      |
 | limitations under the License.                                           |
 +-------------------------------------------------------------------------*/
+package com.mpdeimos.ct_tests.looper;
+
+import org.conqat.engine.commons.pattern.PatternList;
 
 /**
  * 
@@ -29,16 +24,11 @@ import org.junit.Test;
  * @version $Rev: $
  * @ConQAT.Rating RED Hash:
  */
-public class PLTest {
-
-	@Test
-	public void testMatch() {
-//		System.out.println(("abc".substring(0,Math.min(3, 100))));
-//		File f = new File(this.getClass().getResource("test").toURI()); //(.|\\s)*
-		assertTrue(Pattern.compile("(?i)(.|\n|\r)*(fix|bug|defe(c|k)t|fehler|behoben|co(r|rr)ect|ko(r|rr)igier)(.|\n|\r)*").matcher("a bukFx for defekkt relas\nblaa\ngrrr\nbug\nbkla\nbug").matches());
-		assertTrue(Pattern.compile("(?is).*(fix|bug|defe(c|k)t|fehler|behoben|co(r|rr)ect|ko(r|rr)igier).*").matcher("Rename Fix Dev folder into DEMCore\r\n\r\ngit-tfs-id").matches());
-//		assertTrue(Pattern.compile("(?i)(.|\n|\r)*(fix|bug|defe(c|k)t|fehler|behoben|co(r|rr)ect|ko(r|rr)igier)(.|\n|\r)*").matcher("Rename Dev folder into DEMCore\r\n\r\ngit-tfs-id: [http://tfs.dev.munich.munichre.com:8080/tfs/DefaultCollection]$/UWPF_DetExp_v1/DEMCore/Main/Source;C209128\r\n").matches());
-//		assertTrue(Pattern.compile("(?i)(.|\n)*(fix|bug|defe(c|k)t|fehler|behoben)(.|\n)*").matcher(f.).matches());
+public class SuspectionOracle
+{
+	public static boolean isSuspicious(PatternList pl, String message)
+	{
+		message = message.substring(0,Math.min(message.length(), 1000));
+		return pl.matchesAny(message);
 	}
-
 }

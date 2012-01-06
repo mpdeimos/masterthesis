@@ -16,6 +16,8 @@
 +-------------------------------------------------------------------------*/
 package com.mpdeimos.ct_tests.looper;
 
+import java.util.ListIterator;
+
 import org.conqat.engine.commons.ConQATProcessorBase;
 import org.conqat.engine.core.core.ConQATException;
 
@@ -33,4 +35,6 @@ public abstract class RevisionLooperMethodBase extends ConQATProcessorBase imple
 	}
 
 	abstract protected void onProcess() throws ConQATException;
+	public abstract RevIterator iterator();
+	
 }

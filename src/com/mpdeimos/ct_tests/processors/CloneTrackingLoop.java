@@ -54,6 +54,7 @@ import org.conqat.engine.core.core.AConQATFieldParameter;
 import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
 import org.conqat.engine.core.core.ConQATException;
+import org.conqat.engine.core.driver.instance.ConQATStringPool;
 import org.conqat.engine.core.logging.testutils.ProcessorInfoMock;
 import org.conqat.engine.persistence.DatabaseUtils;
 import org.conqat.engine.persistence.store.StorageException;
@@ -74,6 +75,7 @@ import org.conqat.lib.commons.string.StringUtils;
 import com.mpdeimos.ct_tests.configuration.CDConfiguration;
 import com.mpdeimos.ct_tests.looper.RevisionInfo;
 import com.mpdeimos.ct_tests.looper.RevisionLooperMethodBase;
+import com.mpdeimos.ct_tests.looper.SuspectionOracle;
 import com.mpdeimos.ct_tests.vcs.Commit;
 
 /**
@@ -308,9 +310,8 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		{
 			HashMap<Long, Clone> newPotentialBugs = new HashMap<Long, Clone>();
 			String message = revision.getCommit().getMessage();
-			message = message.substring(0,Math.min(message.length(), 1000));
 			Statement stmt = dbSpace.getDbConnection().createStatement();
-			boolean potentialBug = messageAnanlyzerPattern.matchesAny(message); // FIXME case sensitive?
+			boolean potentialBug = SuspectionOracle.isSuspicious(messageAnanlyzerPattern, message);
 			boolean newBugs = false;
 			for (CloneClass cloneClass : detectionResult.getList())
 			{
@@ -462,6 +463,8 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				if (iTokenElement == null)
 					continue;
 				
+				getLogger().info(" ++ " + file);
+				
 				index.insertFile(iTokenElement);
 				extractUnits(iTokenElement);
 			}
@@ -473,6 +476,8 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				if (iTokenElement == null)
 					continue;
 				
+				getLogger().info(" +- " + file);
+				
 				if (indexStore.getChunksByOrigin(file) != null)
 					indexStore.removeChunks(file);
 				index.insertFile(iTokenElement);
@@ -481,6 +486,8 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			for (String file : vcsData.getDeleted())
 			{
 				file = projectName + "/" + file;
+				
+				getLogger().info(" -- " + file);
 				
 				units.remove(file);
 				
@@ -500,6 +507,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	 * @throws CloneDetectionException 
 	 */
 	private void extractUnits(ITokenElement element) throws CloneDetectionException {
+		ConQATStringPool.clear();
 		IUnitProvider<ITokenResource, Unit> normalizer = config.getNormalization(element.getLanguage());
 		
 		normalizer.init(element, getLogger());
@@ -511,6 +519,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			}
 		}
 		units.put(element.getUniformPath(), CollectionUtils.toArray(fileUnits, Unit.class));
+		ConQATStringPool.clear();
 //		if (unitCount == 0) {
 //			return 0;
 //		}

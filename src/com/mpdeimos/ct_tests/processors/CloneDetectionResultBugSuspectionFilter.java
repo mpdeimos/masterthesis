@@ -17,6 +17,7 @@
 package com.mpdeimos.ct_tests.processors;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -50,12 +51,13 @@ public class CloneDetectionResultBugSuspectionFilter extends ConQATProcessorBase
 	
 	public CloneDetectionResultElement process()
 	{
+		List<CloneClass> removes = new ArrayList<CloneClass>();
 		for (CloneClass cc : result.getList())
 		{
 			if (!cc.containsValue(BUGSUSPECTION))
-				result.getList().remove(cc);
+				removes.add(cc);
 		}
-		
+		result.getList().removeAll(removes);
 		return result;
 	}
 }

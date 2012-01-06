@@ -13,20 +13,19 @@
          <attr name="is-git"/>
       </param>
       <processor class="com.mpdeimos.ct_tests.processors.CloneTrackingLoop" name="revision-looper">
-         <looper ref="@directory-revision-looper"/>
          <project includePattern="" name="@projectName"/>
-         <looper ref="@git-revision-looper"/>
-         <database index-store="@in-memory-clone-index-store-factory" space="@database-space-factory"/>
+         <looper ref="@revision-compressor"/>
+         <database index-store="@clone-index-store-adapter-factory" space="@database-space-factory"/>
          <dummy ref="@flags.traditional-clone-detection"/>
          <output path="@dir.out" write-interim-results="@boolean-defaults-processor"/>
          <result list="@result.list"/>
          <configuration ref="@configuration-factory.configuration"/>
          <message-analyzer pattern="@pattern-list-def"/>
       </processor>
-      <processor class="org.conqat.engine.commons.string.Concatenator" condition="@optional-string-param.parameter-present" name="dd">
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="dd">
          <part string="@dir.out"/>
          <separator string="/"/>
-         <part string="@optional-string-param.result"/>
+         <part string="@dd2"/>
       </processor>
       <param name="flags">
          <attr name="traditional-clone-detection"/>
@@ -45,6 +44,7 @@
       </processor>
       <processor class="org.conqat.engine.persistence.HSQLDatabaseConnector" condition="@always-true-condition2" name="hsql-database-connector">
          <file path="@dd"/>
+         <tables cached="true"/>
       </processor>
       <processor class="org.conqat.engine.clone_tracking.DatabaseSpaceFactory" name="database-space-factory">
          <system name="@projectName"/>
@@ -104,7 +104,7 @@
          <actual value="@language.name"/>
       </processor>
       <processor class="org.conqat.engine.commons.pattern.PatternListDef" name="pattern-list-def">
-         <pattern regex="(?i)(.|\n)*(fix|bug|defe(c|k)t|fehler|behoben)(.|\n)*"/>
+         <pattern regex="(?is).*(fix|bug|defe(c|k)t|fehler|behoben|co(r|rr)ect|ko(r|rr)igier).*"/>
       </processor>
       <processor class="com.mpdeimos.ct_tests.processors.CloneDetectionResultBugSuspectionFilter" name="clone-detection-result-bug-suspection-filter">
          <clone report="@revision-looper"/>
@@ -114,6 +114,32 @@
          <detection-result ref="@clone-detection-result-bug-suspection-filter"/>
       </processor>
       <out name="suspecious-report" ref="@clone-report-writer-processor"/>
+      <processor class="com.mpdeimos.ct_tests.looper.RevisionCompressor" name="revision-compressor">
+         <revision-looper ref="@git-revision-looper"/>
+         <revision-looper ref="@directory-revision-looper"/>
+         <include pattern="@pattern-list-def"/>
+         <compress enable="@boolean-defaults-processor2"/>
+      </processor>
+      <param name="compress">
+         <attr name="enable"/>
+      </param>
+      <processor class="org.conqat.engine.commons.defaults.BooleanDefaultsProcessor" name="boolean-defaults-processor2">
+         <default value="false"/>
+         <actual value="@compress.enable"/>
+      </processor>
+      <processor class="org.conqat.engine.persistence.store.bdb.BDBStoreFactory" name="bdb-store-factory">
+         <storage dir="@concatenator"/>
+      </processor>
+      <processor class="org.conqat.engine.code_clones.index.store.adapt.CloneIndexStoreAdapterFactory" name="clone-index-store-adapter-factory">
+         <store name="" system="@bdb-store-factory"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.string.Concatenator" name="concatenator">
+         <part string="@dir.out"/>
+         <part string="/db"/>
+      </processor>
+      <processor class="org.conqat.engine.commons.string.Concatenator" condition="@optional-string-param.parameter-present" name="dd2">
+         <part string="@db.file"/>
+      </processor>
    </block-spec>
    <meta type="cq.edit">
       <entries namespace="dir">
@@ -123,10 +149,10 @@
       <entries namespace="#comments"/>
       <entries namespace="#comment-bounds"/>
       <entries namespace="revision-looper">
-         <entry key="pos" value="-48,504"/>
+         <entry key="pos" value="-48,564"/>
       </entries>
       <entries namespace="dd">
-         <entry key="pos" value="468,132"/>
+         <entry key="pos" value="468,180"/>
          <entry key="edges_invisible" value="false"/>
       </entries>
       <entries namespace="flags">
@@ -134,7 +160,7 @@
          <entry key="edges_invisible" value="false"/>
       </entries>
       <entries namespace="in-memory-clone-index-store-factory">
-         <entry key="pos" value="276,132"/>
+         <entry key="pos" value="-252,408"/>
       </entries>
       <entries namespace="directory-revision-looper">
          <entry key="pos" value="-108,132"/>
@@ -162,10 +188,10 @@
          <entry key="pos" value="660,228"/>
       </entries>
       <entries namespace="report">
-         <entry key="pos" value="0,612"/>
+         <entry key="pos" value="0,672"/>
       </entries>
       <entries namespace="database">
-         <entry key="pos" value="180,612"/>
+         <entry key="pos" value="180,672"/>
       </entries>
       <entries namespace="limit">
          <entry key="pos" value="-156,48"/>
@@ -190,7 +216,7 @@
          <entry key="pos" value="276,216"/>
       </entries>
       <entries namespace="boolean-defaults-processor">
-         <entry key="pos" value="14,292"/>
+         <entry key="pos" value="156,348"/>
       </entries>
       <entries namespace="result">
          <entry key="pos" value="-456,48"/>
@@ -215,6 +241,28 @@
       </entries>
       <entries namespace="suspecious-report">
          <entry key="pos" value="-384,624"/>
+      </entries>
+      <entries namespace="revision-compressor">
+         <entry key="pos" value="0,228"/>
+      </entries>
+      <entries namespace="compress">
+         <entry key="pos" value="-288,240"/>
+      </entries>
+      <entries namespace="boolean-defaults-processor2">
+         <entry key="pos" value="-180,228"/>
+      </entries>
+      <entries namespace="bdb-store-factory">
+         <entry key="pos" value="-168,348"/>
+      </entries>
+      <entries namespace="clone-index-store-adapter-factory">
+         <entry key="pos" value="-168,348"/>
+      </entries>
+      <entries namespace="concatenator">
+         <entry key="pos" value="-168,348"/>
+      </entries>
+      <entries namespace="dd2">
+         <entry key="pos" value="468,120"/>
+         <entry key="edges_invisible" value="false"/>
       </entries>
    </meta>
 </conqat>
