@@ -11,7 +11,6 @@
          <clone minlength="@clone.minlength" shaped="@clone.shaped"/>
          <flags traditional-clone-detection="@flags.traditional-clone-detection" write-interim-results="true"/>
          <result list="@detection-list-creator"/>
-         <compress enable=""/>
       </block>
       <param name="dir">
          <attr name="src">

@@ -1,5 +1,5 @@
 #!com.mpdeimos.ct_tests.CDLoop
-limit.start=null
+limit.start=c17ad9f217804d4ca275edbec7d18a5222938cdd
 limit.end=master
 clone.minlength=7
 clone.shaped=true
@@ -11,3 +11,4 @@ dir.out=/home/mpdeimos/workspaces/cq/out/banshee
 language.name=cs
 compress.enable=true
 db.file=db.hsql
+persist.disable=true

@@ -21,17 +21,17 @@
          <result list="@result.list"/>
          <configuration ref="@configuration-factory.configuration"/>
          <message-analyzer pattern="@pattern-list-def"/>
+         <persist disable="@persist.disable"/>
       </processor>
       <processor class="org.conqat.engine.commons.string.Concatenator" name="dd">
          <part string="@dir.out"/>
          <separator string="/"/>
-         <part string="@dd2"/>
+         <part string="@optional-string-param.result"/>
       </processor>
       <param name="flags">
          <attr name="traditional-clone-detection"/>
          <attr name="write-interim-results"/>
       </param>
-      <processor class="org.conqat.engine.code_clones.index.store.mem.InMemoryCloneIndexStoreFactory" name="in-memory-clone-index-store-factory"/>
       <processor class="com.mpdeimos.ct_tests.looper.DirectoryRevisionLooper" condition="@use-directories" name="directory-revision-looper">
          <directory path="@dir.src"/>
       </processor>
@@ -78,6 +78,7 @@
       <block name="optional-string-param" spec="org.conqat.engine.commons.OptionalStringParam">
          <default value="db.hsql"/>
          <actual value="@db.file"/>
+         <default value="@db.file"/>
       </block>
       <processor class="com.mpdeimos.ct_tests.processors.DatabaseConnectionSelector" name="database-connection-selector">
          <db connection="@hsql-database-connector"/>
@@ -127,7 +128,7 @@
          <default value="false"/>
          <actual value="@compress.enable"/>
       </processor>
-      <processor class="org.conqat.engine.persistence.store.bdb.BDBStoreFactory" name="bdb-store-factory">
+      <processor class="org.conqat.engine.persistence.store.bdb.BDBStoreFactory" condition="@always-true-condition22" name="bdb-store-factory">
          <storage dir="@concatenator"/>
       </processor>
       <processor class="org.conqat.engine.code_clones.index.store.adapt.CloneIndexStoreAdapterFactory" name="clone-index-store-adapter-factory">
@@ -137,8 +138,14 @@
          <part string="@dir.out"/>
          <part string="/db"/>
       </processor>
-      <processor class="org.conqat.engine.commons.string.Concatenator" condition="@optional-string-param.parameter-present" name="dd2">
-         <part string="@db.file"/>
+      <param name="persist">
+         <attr name="disable"/>
+      </param>
+      <processor class="com.mpdeimos.ct_tests.processors.DeleteFiles" name="delete-files2">
+         <delete file="*" path="@concatenator"/>
+      </processor>
+      <processor class="com.mpdeimos.ct_tests.processors.AlwaysTrueCondition" name="always-true-condition22">
+         <input param="@delete-files2"/>
       </processor>
    </block-spec>
    <meta type="cq.edit">
@@ -158,9 +165,6 @@
       <entries namespace="flags">
          <entry key="pos" value="408,48"/>
          <entry key="edges_invisible" value="false"/>
-      </entries>
-      <entries namespace="in-memory-clone-index-store-factory">
-         <entry key="pos" value="-252,408"/>
       </entries>
       <entries namespace="directory-revision-looper">
          <entry key="pos" value="-108,132"/>
@@ -182,7 +186,7 @@
          <entry key="edges_invisible" value="true"/>
       </entries>
       <entries namespace="delete-files">
-         <entry key="pos" value="660,132"/>
+         <entry key="pos" value="660,180"/>
       </entries>
       <entries namespace="always-true-condition2">
          <entry key="pos" value="660,228"/>
@@ -207,7 +211,7 @@
          <entry key="pos" value="563,45"/>
       </entries>
       <entries namespace="optional-string-param">
-         <entry key="pos" value="672,48"/>
+         <entry key="pos" value="468,108"/>
       </entries>
       <entries namespace="database-connection-selector">
          <entry key="pos" value="384,348"/>
@@ -252,17 +256,23 @@
          <entry key="pos" value="-180,228"/>
       </entries>
       <entries namespace="bdb-store-factory">
-         <entry key="pos" value="-168,348"/>
+         <entry key="pos" value="-72,348"/>
       </entries>
       <entries namespace="clone-index-store-adapter-factory">
-         <entry key="pos" value="-168,348"/>
+         <entry key="pos" value="-72,396"/>
       </entries>
       <entries namespace="concatenator">
-         <entry key="pos" value="-168,348"/>
+         <entry key="pos" value="-72,300"/>
       </entries>
-      <entries namespace="dd2">
-         <entry key="pos" value="468,120"/>
-         <entry key="edges_invisible" value="false"/>
+      <entries namespace="persist">
+         <entry key="pos" value="708,48"/>
+         <entry key="edges_invisible" value="true"/>
+      </entries>
+      <entries namespace="delete-files2">
+         <entry key="pos" value="-252,300"/>
+      </entries>
+      <entries namespace="always-true-condition22">
+         <entry key="pos" value="-252,348"/>
       </entries>
    </meta>
 </conqat>

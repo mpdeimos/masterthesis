@@ -23,6 +23,8 @@ import org.conqat.engine.core.core.AConQATAttribute;
 import org.conqat.engine.core.core.AConQATParameter;
 import org.conqat.engine.core.core.AConQATProcessor;
 import org.conqat.engine.core.core.ConQATException;
+import org.eclipse.jgit.util.FileUtils;
+import org.hsqldb.lib.FileUtil;
 
 /**
  * 
@@ -46,7 +48,13 @@ public class DeleteFiles extends ConQATProcessorBase {
 			) throws ConQATException {
 		this.file = file;
 		this.path = new File(path);
-		if (!this.path.exists() || !this.path.isDirectory())
+		
+		if (!this.path.exists())
+		{
+			this.path.mkdirs();
+		}
+		
+		if (!this.path.isDirectory())
 			throw new ConQATException(path + " needs to be a directory.");
 	}
 	
@@ -55,12 +63,13 @@ public class DeleteFiles extends ConQATProcessorBase {
 	 * @return */
 	@Override
 	public Object process()  {
+		
 		for (File f : path.listFiles())
 		{
-			if (f.getName().startsWith(file))
+			if (file.equals("*") || f.getName().startsWith(file))
 				f.delete();
 		}
-		
+
 		return null;
 	}
 

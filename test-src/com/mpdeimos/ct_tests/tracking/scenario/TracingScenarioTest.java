@@ -65,7 +65,7 @@ public class TracingScenarioTest extends CCSMTestCaseBase {
 				|| folderName.equals("unchanged");
 		boolean focused = true;
 		// Use this line to selectively include certain tests during debugging
-//		focused = folderName.equals("first_method_removed");
+//		focused = folderName.equals("third_clone_removed");
 		return ignored || !focused;
 	}
 

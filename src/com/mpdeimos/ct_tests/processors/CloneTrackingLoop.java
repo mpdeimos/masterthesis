@@ -25,20 +25,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.conqat.engine.clone_tracking.editpropagation.CloneEditPropagator;
+import org.apache.commons.collections.MapUtils;
+import org.conqat.engine.clone_tracking.editpropagation.CloneEditPropagator3;
 import org.conqat.engine.clone_tracking.gateways.KeyValueGateway;
-import org.conqat.engine.clone_tracking.matching.CloneMatcher;
+import org.conqat.engine.clone_tracking.matching.CloneMatcher3;
 import org.conqat.engine.code_clones.core.Clone;
 import org.conqat.engine.code_clones.core.CloneClass;
 import org.conqat.engine.code_clones.core.CloneDetectionException;
 import org.conqat.engine.code_clones.core.IDatabaseSpace;
 import org.conqat.engine.code_clones.core.KeyValueStoreBase;
 import org.conqat.engine.code_clones.core.Unit;
-import org.conqat.engine.code_clones.core.constraint.ICloneClassConstraint;
-import org.conqat.engine.code_clones.core.report.enums.EChangeType;
 import org.conqat.engine.code_clones.core.utils.CloneUtils;
 import org.conqat.engine.code_clones.core.utils.EBooleanStoredValue;
-import org.conqat.engine.code_clones.core.utils.ECloneClassChange;
 import org.conqat.engine.code_clones.detection.CloneDetectionResultElement;
 import org.conqat.engine.code_clones.index.CloneIndex;
 import org.conqat.engine.code_clones.index.CloneIndexBuilder;
@@ -65,12 +63,9 @@ import org.conqat.engine.resource.scope.filesystem.FileSystemScope;
 import org.conqat.engine.resource.util.ResourceTraversalUtils;
 import org.conqat.engine.sourcecode.resource.ITokenElement;
 import org.conqat.engine.sourcecode.resource.ITokenResource;
-import org.conqat.engine.sourcecode.resource.TokenElement;
 import org.conqat.engine.sourcecode.resource.TokenResourceSelector;
 import org.conqat.lib.commons.algo.Diff.Delta;
-import org.conqat.lib.commons.clone.DeepCloneException;
 import org.conqat.lib.commons.collections.CollectionUtils;
-import org.conqat.lib.commons.string.StringUtils;
 
 import com.mpdeimos.ct_tests.configuration.CDConfiguration;
 import com.mpdeimos.ct_tests.looper.RevisionInfo;
@@ -161,6 +156,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	private ProcessorInfoMock infoMock = new ProcessorInfoMock();
 
 	private Map<String, Unit[]> units = new HashMap<String, Unit[]>();
+	private boolean disablePersist = false;
 	
 	/** {@ConQAT.Doc} */
 	@AConQATParameter(name = "dummy", minOccurrences = 0, maxOccurrences = -1, description = ""
@@ -168,6 +164,12 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	public void addConstraint(
 			@AConQATAttribute(name = "ref", description = "TODO") Object ref) {
 		// nothing
+	}
+	
+	@AConQATParameter(name = "persist", description = "", minOccurrences = 0, maxOccurrences = 1)
+	public void setPersistDisabled(
+			@AConQATAttribute(name = "disable", description = "") boolean disable) {
+		this.disablePersist  = disable;
 	}
 	
 	
@@ -179,11 +181,17 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		{
 			CloneIndex index = new CloneIndex(indexStore, getLogger());
 			CloneDetectionResultElement detectionResult = null;
+			CloneDetectionResultElement lastResult = null;
 	
 			boolean initPhase = true;
 			
 			for (RevisionInfo revision : revisionLooper)
 			{
+				lastResult = detectionResult;
+				
+				Map<String, Unit[]> hMap = new HashMap<String, Unit[]>();
+				hMap.putAll(units);
+				units = hMap;
 				
 				getLogger().debug("### _______________________________ ###");
 				getLogger().info("### Processing Revision " + revision.getIndex() + " ### " + revision.getID() + " ### ");
@@ -214,10 +222,12 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				}
 				getLogger().info("... clones detected");
 				
-				CloneDetectionResultElement updatedDetectionResult = loop_cloneTracking(detectionResult);
+				CloneDetectionResultElement updatedDetectionResult = loop_cloneTracking(lastResult, detectionResult);
 				getLogger().info("... clones tracked");
 				
-				KeyValueGateway keyValueGateway = new KeyValueGateway(dbSpace, getLogger()); // TODO member?
+				KeyValueGateway keyValueGateway = null;
+				if (!disablePersist)
+					keyValueGateway = new KeyValueGateway(dbSpace, getLogger()); // TODO member?
 				boolean newBugs = loop_markReportAndClones(detectionResult, revision, keyValueGateway);
 				
 				getLogger().info("... clones marked");
@@ -250,24 +260,26 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		}
 	}
 
-	private CloneDetectionResultElement loop_cloneTracking(
-			CloneDetectionResultElement detectionResult) throws ConQATException {
-		CloneEditPropagator cloneEditPropagator = new CloneEditPropagator();
+	private CloneDetectionResultElement loop_cloneTracking(CloneDetectionResultElement oldDetectionResult,
+			CloneDetectionResultElement newDetectionResult) throws ConQATException {
+		CloneEditPropagator3 cloneEditPropagator = new CloneEditPropagator3();
 		cloneEditPropagator.init(infoMock);
 		cloneEditPropagator.setDbSpace(this.dbSpace);
-		cloneEditPropagator.setNewDetectionResult(detectionResult);
+		cloneEditPropagator.setDetectionResult(oldDetectionResult, newDetectionResult);
+		cloneEditPropagator.setPersistDisabled(disablePersist);
 		CloneDetectionResultElement updatedDetectionResult = cloneEditPropagator.process();
 		
-		CloneMatcher cloneMatcher = new CloneMatcher();
+		CloneMatcher3 cloneMatcher = new CloneMatcher3();
 		cloneMatcher.init(infoMock);
 		cloneMatcher.setDbSpace(this.dbSpace);
 		cloneMatcher.setMinLength(config.getCloneMinLength());
-		cloneMatcher.setNewDetectionResult(detectionResult);
+		cloneMatcher.setNewDetectionResult(newDetectionResult);
 		cloneMatcher.setUpdatedClones(updatedDetectionResult);
+		cloneMatcher.setPersistDisabled(disablePersist);
 		cloneMatcher.process(); // pipelined to detectionResult
 		
 		// TODO depending on how we decide on non-changing fingerprints we need to shift this into the clone matching algorithm
-		for (CloneClass cloneClass : detectionResult.getList())
+		for (CloneClass cloneClass : newDetectionResult.getList())
 		{
 			for (Clone clone : cloneClass.getClones())
 			{
@@ -275,7 +287,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				// FIXME hack
 				if (changesetSize(delta) > 0)
 				{
-					clone.setFingerprintLastModified(detectionResult.getSystemDate());
+					clone.setFingerprintLastModified(newDetectionResult.getSystemDate());
 					EBooleanStoredValue.FINGERPRINT_CHANGED.setValue(clone, true);
 				}
 				// TODO persist to DB?
@@ -310,7 +322,9 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		{
 			HashMap<Long, Clone> newPotentialBugs = new HashMap<Long, Clone>();
 			String message = revision.getCommit().getMessage();
-			Statement stmt = dbSpace.getDbConnection().createStatement();
+			Statement stmt = null;
+			if (!disablePersist)
+				stmt = dbSpace.getDbConnection().createStatement();
 			boolean potentialBug = SuspectionOracle.isSuspicious(messageAnanlyzerPattern, message);
 			boolean newBugs = false;
 			for (CloneClass cloneClass : detectionResult.getList())
@@ -358,7 +372,8 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				}
 			}
 			
-			DatabaseUtils.executeAndClose(stmt);
+			if (!disablePersist)
+				DatabaseUtils.executeAndClose(stmt);
 			this.lastPotentialBugs = newPotentialBugs;
 			
 			return newBugs;
@@ -372,7 +387,8 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	private void addSuspection(KeyValueGateway keyValueGateway, String message,
 			Statement stmt, KeyValueStoreBase kv) throws SQLException {
 		EStringStoredValue.BUGSUSPECTION.set(kv, message);
-		stmt.addBatch(keyValueGateway.createInsertValueSql(kv.getId(), EStringStoredValue.BUGSUSPECTION.getKey(), message));
+		if (!disablePersist)
+			stmt.addBatch(keyValueGateway.createInsertValueSql(kv.getId(), EStringStoredValue.BUGSUSPECTION.getKey(), message));
 	}
 
 	private CloneDetectionResultElement loop_runCloneDetection(RevisionInfo revision, ITokenResource resource)
@@ -384,7 +400,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		detector.setInput(resource);
 		detector.setStoreFactory(indexStore);
 		detector.setMinLength(config.getCloneMinLength()); // TODO make configurable
-		detector.setDbSpace(dbSpace);
+		detector.setIdProvider(dbSpace.getIdProvider());
 		config.attachConstraints(detector);
 		CloneDetectionResultElement result = detector.process();
 		result = reattachUnits(result);
@@ -422,10 +438,21 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	}
 
 	private void loop_writeResults(RevisionInfo revision,
-			CloneDetectionResultElement result, String postfix) throws ConQATException {
+			CloneDetectionResultElement result, String postfix) {
+		try
+		{
 		File outFile = new File(outDir.getPath(), ( revision== null?"":revision.getIndex()) + "clones-" + postfix + ".xml");
 //			CloneListReportWriterProcessor.writeReport(result.getList(), vcsData.getDate(), outFile, getLogger());
 		CloneReportWriterProcessor.writeReport(result.getList(), result.getRoot(), result.getSystemDate(), outFile, getLogger());
+		}
+		catch (Throwable e)
+		{
+			getLogger().error(e.getMessage(), e);
+		}
+		
+//		
+//		* ERROR : Processor 'com.mpdeimos.ct_tests.CDLoop.revision-looper' failed badly: Inconsistent clone data: origin Project/src/Extensions/Banshee.Moblin/Banshee.Moblin/SearchEntry.cs unknown.
+//		java.lang.AssertionError: Inconsistent clone data: origin Project/src/Extensions/Banshee.Moblin/Banshee.Moblin/SearchEntry.cs unknown.
 	}
 
 	private void loop_updateCloneIndex(CloneIndex index, boolean initPhase,
