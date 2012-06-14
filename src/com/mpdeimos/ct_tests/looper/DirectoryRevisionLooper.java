@@ -91,13 +91,13 @@ public class DirectoryRevisionLooper extends RevisionLooperMethodBase {
 			}
 
 			@Override
-			public String peekMessage() {
+			public Commit peekCommit() {
 				if (!hasNext())
 					throw new IllegalStateException();
 				
 				File path = subDirs[index+1];
 				Commit commit = new Commit(path.getPath()+"/vcs.data");
-				return commit.getMessage();
+				return commit;
 			}
 		};
 	}

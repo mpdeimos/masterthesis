@@ -52,6 +52,8 @@ public class RevisionCompressor extends RevisionLooperMethodBase {
 	private RevisionLooperMethodBase looper;
 	private PatternList pl;
 	private boolean enable;
+	private int maxChangesetSize = -1;
+	private int minChangesetSize = -1;
 	
 	@AConQATParameter(name = "revision-looper", minOccurrences = 1, description = "")
 	public void setLooper(
@@ -75,7 +77,16 @@ public class RevisionCompressor extends RevisionLooperMethodBase {
 		this.enable = enable;
 		
 	}
-
+	@AConQATParameter(name = "changesetSize", maxOccurrences = 1, description = "")
+	public void setCompress(
+			@AConQATAttribute(name = "max-changeset-size", description = "default -1") int maxChangesetSize,
+			@AConQATAttribute(name = "min-changeset-size", description = "default -1") int minChangesetSize
+			) throws ConQATException {
+		this.maxChangesetSize = maxChangesetSize;
+		this.minChangesetSize = minChangesetSize;
+		
+	}
+	
 	/** {@inheritDoc} */
 	@Override
 	protected void onProcess() throws ConQATException {
@@ -99,9 +110,10 @@ public class RevisionCompressor extends RevisionLooperMethodBase {
 			
 			@Override
 			public RevisionInfo next() {
-				if (SuspectionOracle.isSuspicious(pl, iterator.peekMessage()))
+				if (SuspectionOracle.isSuspicious(pl, iterator.peekCommit(), minChangesetSize, maxChangesetSize))
 				{
-					return iterator.next();
+					RevisionInfo c = iterator.next();
+					return c;
 				}
 				
 				HashMap<String, EChangeType> map = new HashMap<String, EChangeType>();
@@ -121,7 +133,7 @@ public class RevisionCompressor extends RevisionLooperMethodBase {
 						map.put(s, EChangeType.MODIFIED);
 							
 					// interesting commit
-					if (iterator.hasNext() && SuspectionOracle.isSuspicious(pl, iterator.peekMessage()))
+					if (iterator.hasNext() && SuspectionOracle.isSuspicious(pl, iterator.peekCommit(), minChangesetSize, maxChangesetSize))
 						break;
 				}
 				
@@ -148,6 +160,7 @@ public class RevisionCompressor extends RevisionLooperMethodBase {
 				
 				// ignore NPEs
 				Commit compound = new Commit(c.getId(), c.getDate(), c.getMessage(), added, deleted, modified);
+				compound.setCompund(true);
 				return new RevisionInfo(next.getIndex(), compound.getId(), compound, null)
 				{
 					/** {@inheritDoc} 
@@ -166,8 +179,8 @@ public class RevisionCompressor extends RevisionLooperMethodBase {
 			}
 
 			@Override
-			public String peekMessage() {
-				return iterator.peekMessage();
+			public Commit peekCommit() {
+				return iterator.peekCommit();
 			}
 		};
 	}

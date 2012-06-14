@@ -1,0 +1,1436 @@
+Use new/permanent library DB path: ~/.gnome2/banshee/banshee.db, use and
+
+2005-10-26  Aaron Bockover  <aaron@aaronbock.net>
+
+	* src/Library.cs: Use new/permanent library DB path:
+	~/.gnome2/banshee/banshee.db, use and move the old one if it exists
+	* plugincore/Paths.cs: Moved ApplicationData from ~/.config/banshee to
+	~/.gnome2/banshee, create the cover art directory if it doesn't exist
+	when it's requested
+	* data/glade/player.glade: Added a container for the
+	ActiveUserEventsManager widget
+	* src/banshee.exe.config.in: Map for GTK+
+	* src/Core.cs (ProxyToMainThread): Wrap Application.Invoke to run handler
+	in current thread if already in main thread
+	* src/PlayerInterface.cs: Integrate ActiveUserEventsManager into UI
+	* src/Makefile.am: Add ActiveUserEvent.cs, ActiveUserEventsManager.cs and
+	update for new burn icons
+	* src/StockIcons.cs:
+	* src/Preferences.cs:
+	* src/BurnCore.cs: Use new burn icons
+	* src/RipTransaction.cs:
+	* src/IpodCore.cs: Use the new user events manager
+	* src/ActiveUserEventsManager.cs: user events manager for progress
+	reporting
+	* src/ActiveUserEvent.cs: Class for user events to use to report progress
+	and messages to a managed user interface
+	* src/AboutBox.cs: Bindings for the GTK About Box (don't exist in
+	gtk-sharp yet), use it instead of the GNOME About Box.
+
+2005-10-25  Aaron Bockover  <aaron@aaronbock.net>
+
+	* src/SearchEntry: Reformatted code, added Focus() method
+	* src/PlayerInterface.cs (OnKeyPressEvent): use GLib.ConnectBefore to
+	handle key press events; J/j/F3 focus the search widget, and
+	CTRL+Left rewinds by 10 seconds, CTRL+Right fast-forwards 10 seconds
+	* src/CoverArtThumbnail.cs: Fixed segfault when trying to thumbnail
+	a null pixbuf
+
+2005-10-24  Miguel de Icaza  <miguel@novell.com>
+
+	* src/PlayerInterface.cs (OnIpodDeviceChanged): Put all the code
+	in this method inside an Application.Invoke instead of using one
+	Application.Invoke per ListStore.
+
+	Also surrounds the code that was hanging Banshee after triggering
+	an iPodSync: the second part of the routine was not protected
+	inside an Application.Invoke.
+
+	* src/PlaylistView.cs (RipCellInd): Avoid try/catch and instead
+	use "as" to explicitly state what is going on.  Also helps
+	reduce the exceptions being thrown while tracking issues.
+
+	* src/LibraryTrackInfo.cs (LoadFromDatabaseReader): the values
+	stored were strings, not longs.  Parse them accordingly.
+
+	Use mono --trace=N:nothing banshee.exe to find abuses of exception
+	handling.
+
+2005-10-23  Aaron Bockover  <aaron@aaronbock.net>
+
+	* data/glade/player.glade: Added delete from drive menu items
+	* src/PlayerInterface.cs: Added ability to remove songs permanently from
+	drive, not just from being referenced in library
+
+	* data/glade/player.glade: Added Full Screen menu item to View menu
+	* src/PlayerInterface.cs: Added Full Screen mode
+
+	* src/AudioCdCore.cs: Removed reference to CddbSlaveClient
+	* src/Makefile.am: removed CddbSlaveClient.cs from build
+	* src/CddbSlaveClient.cs: removed Gnome Media CDDB Slave2 client bindings
+
+	* data/glade/player.glade: Added a container for the CoverArtThumbnail
+	widget
+	* src/Makefile.am: Added CoverArtThumbnail.cs, AmazonCoverFetcher.cs
+	* src/AudioCdCore.cs: Fetch cover art from Amazon.com after MusicBrainz
+	returns an ASIN
+	* src/PlayerInterface.cs: Show a CoverArtThumbnail widget in header
+	* src/LibraryTrackInfo.cs: Copy ASIN from AudioCdTrackInfo to
+	LibraryTrackInfo
+	* src/AmazonCoverFetcher.cs: Fetch cover art from Amazon.com based on ASIN
+	* src/CoverArtThumbnail.cs: Widget to scale and display a thumbnail of
+	cover art and display full-resolution cover art in popup window when
+	cursor hovers over thumbnail
+	* plugincore/Makefile.am: Added Paths.cs
+	* plugincore/TrackInfo.cs: Added Asin property, added CoverArtFileName
+	property that returns cover art path based on Asin
+	* plugincore/Paths.cs: Paths class available to plugins, added property
+	CoverArtDirectory and GetCoverArtPath() method
+	* src/Utilities.cs: Moved Paths class to plugincore/Paths.cs
+
+2005-10-22  Aaron Bockover  <aaron@aaronbock.net>
+
+	* src/PlayerInterface.cs: Show/Hide the rip column for the respective view,
+	only queue items for ripping that have been checked, nice pretty rip icon
+	* src/PlaylistView.cs: Added a toggle column used for selecting tracks
+	for ripping
+	* src/AudioCdCore.cs: Added CanRip property that is toggled on/off to
+	designate whether to rip a track or not
+	* src/StockIcons.cs: Added a hashtable map to icon names, added the nice
+	rip icon (media-rip maps to cd-action-rip-24)
+
+	* configure.ac: Remove all IDL/CORBA junk previously needed for CDDB Slave2
+	* libbanshee/GNOME_Media_CDDBSlave2.idl:
+	* libbanshee/cd-info.[ch]:
+	* libbanshee/cddb-slave-client.[ch]:
+	* libbanshee/cddb-test.c: Removed, yay for less bloat
+	* libbanshee/Makefile.am: Remove references to removed files, do not
+	worry about IDL cruft... yay!
+
+	* src/MusicBrainz/SimpleDisc.cs: Add an indexer for looking up tracks
+	* src/AudioCdCore.cs: Removed CDDB implementation, implemented MusicBrainz
+	CD TOC reading and Metadata Lookup, refactored and cleaned up a lot in here
+
+2005-10-21  Aaron Bockover  <aaron@aaronbock.net>
+
+	* configure.ac: Generate src/MusicBrainz/MusicBrainz.dll.config, and
+	src/MusicBrainz/Makefile
+	* src/Makefile.am: Add MusicBrainz to SUBDIRS, link against MusicBrainz.dll
+	* src/MusicBrainz/Makefile.am: Build/install MusicBrainz.dll
+	* src/MusicBrainz/MusicBrainz.dll.config.in: DLL Mappings to libmusicbrainz
+	* src/MusicBrainz/Client.cs: MusicBrainz C# bindings to the MusicBrainz
+	client
+	* src/MusicBrainz/ClientVersion.cs: Class representing MusicBrainz client
+	version information
+	* src/MusicBrainz/Rdf.cs: RDF Strings for the MusicBrainz client
+	* src/MusicBrainz/SimpleDisc.cs: Basic class to handle reading CD
+	and querying MB
+	* src/MusicBrainz/SimpleTrack.cs: A class representing a track on a CD
+	* src/MusicBrainz/SimpleDiscTest.cs: A simple console test program
+	to read a CD
+
+	* mediaengines/vlc/Makefile.am: fixed whitespace after trailing \
+	* data/banshee.desktop.in.in: Make the desktop file show up in
+	Ximian/Novell/RedHat menus
+	* configure.ac: Output hal-sharp/hal-sharp.dll.config
+	* src/StockIcons.cs: use StockItem to initalize stock icons with i18n
+	descriptions, add items to Gtk.StockManager
+
+2005-10-21  Rodney Dawes  <dobey@novell.com>
+
+	* data/images/Makefile.am: Install the 16px and 22px versions into the
+	16x16 and 22x22 hicolor directories, not the 24px icon
+
+2005-10-21  Aaron Bockover  <aaron@aaronbock.net>
+
+	* configure.ac: require mono 1.1.9
+	* hal-sharp/Makefile.am: Install hal-sharp.dll.config,
+	not hal-sharp.dll.config.in
+
+2005-10-21  Aaron Bockover  <aaron@aaronbock.net>
+
+	* configure.ac: Require gtk-sharp 2.3.91 and ipod-sharp 0.5.8
+
+	* Makefile.am: Updated DISTCLEANFILES/CLEANFILES
+	* configure.ac: Removed data/banshee.desktop.in
+
+	* mediaengines/vlc/Makefile.am: Added package rule for creating separate
+	binary VLC mediaengine tarball
+
+	* data/images/Makefile.am: Updated icon installation rules
+	* data/images/Makefile.am.build: Removed, managing manually
+
+	* data/glade/about.glade: removed, using gnome about dialog
+	* data/glade/player.glade: Add help menu item for version information
+
+	* data/banshee.desktop.in.in: Updated desktop file to exec banshee and
+	use new icon
+	* data/org.gnome.Banshee.service.in: Exec banshee
+	* data/Makefile.am: Updated desktop file and schema install rules
+
+	* src/PlaylistColumns.cs: Fix bug regarding default column sizing (the one
+	Nat has been complaining about)
+	* src/AboutBox.cs: Use Gnome About Dialog
+	* src/VersionInformationDialog.cs: Version Information Dialog, move from old
+	About Box, invoke from Help menu
+
+	* src/BurnCore.cs:
+	* src/Preferences.cs:
+	* src/SourceView.cs:
+	* src/PlayerInterface.cs: Lots of cleaning, Use new window icon,
+	get rid of Gdk Thead junk
+
+	* src/PlaylistModel.cs: Use Application.Invoke smartly, fixed performance
+	bug regarding loading a large list of tracks
+
+
+	* src/Core.cs:
+	* src/Library.cs: Clean up, get rid of Gdk Thread junk
+
+	* src/ThemeIcons.cs: Provide a WindowManager icon pixbuf; will expand to
+	new Icon Theme code (vs. stock icon code)
+	* src/DBusIPC.cs: Add more DBus methods (show/hide/play/pause/query*)
+	* src/Main.cs: Command line options for new DBus methods for remote-mode
+
+	* src/PlaylistView.cs:
+	* src/Core.cs:
+	* src/BurnTransaction.cs:
+	* src/StockIcons.cs: general syntax/formatting cleanup
+
+	* src/PipelineProfile.cs:
+	* src/LibraryTrackInfo.cs:
+	* src/IpodCore.cs:
+	* src/AudioCdCore.cs:
+	* src/TrackProperties.cs: Use Mono.Unix, instead of deprecated Mono.Posix
+
+	* src/Makefile.am: Added new sources, modified graphic resources
+
+2005-10-20  Rodney Dawes  <dobey@novell.com>
+
+	* data/images/about-header.png: Replace with new logo image
+
+2005-10-20  Rodney Dawes  <dobey@novell.com>
+
+	* data/images/album-cover-container.png:
+	* data/images/banshee-icon*.png:
+	Removed these old app icons, replaced by music-player-banshee
+
+2005-10-20  Rodney Dawes  <dobey@novell.com>
+
+	* data/images/music-player-banshee*: Add new banshee icons to CVS
+
+2005-10-13  Aaron Bockover  <aaron@aaronbock.net>
+
+	* src/SourceView.cs: SelectSource() method to select any source
+	* src/PlayerInterface.cs: Remove obsolete gtk-sharp-2.0 stuff
+
+	* mediaengines/helix/libhxclient.so.1.0: Updated with COM wrappings
+	* mediaengines/helix/HxUnmanaged.cs, mediaengines/helix/HxPlayer.cs,
+	mediaengines/helix/HxPlayerTest.cs: Bindings and tests for Helix COM
+	* README: Updated it
+	* libbanshee/cd-info.[ch]: Make CD stuff simpler, probably broken ATM
+	* src/AudioCdCore.cs: Making CD stuff simpler, probably broken ATM
+	* src/DBusIPC.cs: SelectAudioCd() method for D-Bus
+	* src/Database.cs: Turn synchronous = OFF for the SQLite DB
+	* src/IpodCore.cs: Tweak some broken iPod sync stuff
+	* src/IpodTrackInfo.cs: Fix URI bug
+	* src/LibraryTransactionStatus.cs: Fix some HIG problems
+	* src/PlayerInterface.cs: Use argument queue to check for g-v-m commands
+	* src/Main.cs: Use argument queue for command line options, options for
+	g-v-m
+	* src/Core.cs: Argument queue
+	* src/PlaylistModel.cs: Fix small null ref
+
+	* mediaengines/vlc/VlcPlayerEngine.cs: Fixed pausing, removed debug writes
+
+	* mediaengines/vlc/VLC.cs: Minor fixes in bindings
+	* mediaengines/vlc/VlcPlayerEngine.cs: Minor fixes
+	* mediaengines/vlc/libvlc.so: Removed, not needed
+
+2005-10-13  Jordi Mas <jordi@ximian.com>
+
+	* configure.ac: Added catalan language
+
+2005-10-12  Aaron Bockover  <aaron@aaronbock.net>
+
+	* mediaengines/vlc/libvlc.so: Dummy text file user must replace with
+	real libvlc.so (source tree too large for inclusion)
+	* mediaengines/vlc/VLC.cs: Partial libvlc C# bindings
+	* mediaengines/vlc/VlcPlayerEngine.cs: libvlc IPlayerEngine implementation
+	* mediaengines/vlc/vlc-player.dll.config.in: vlc-player.dll assembly
+	DLL mappings
+	* mediaengines/vlc/Makefile.am: Build rules for the VLC media engine
+	* configure.ac: Add option for --enable-vlc to build VLC engine
+
+2005-10-12  Chris Lahey  <clahey@localhost.localdomain>
+
+	* data/banshee.schemas.in: Add GConf key for move on save.
+
+	* data/glade/trackinfo.glade: Add accelerators.
+
+	* src/GConfKeys.cs: Add GConf key for move on save.
+
+	* src/LibraryTrackInfo.cs: Add move on save behavior.  Fix GetId
+	function to use uri.ToString instead of uri.AbsoluteUri to match
+	other uses of uri.  Use information parsed from filename to set
+	track number.  Use directory structure to guess metadata.  Move
+	copy on import behavior to here.
+
+	* src/LibraryTransactions.cs: Typo in field name.  Let
+	LibraryTrackInfo handle importing files instead of importing them
+	here.
+
+2005-10-08  Ben Maurer  <bmaurer@ximian.com>
+
+	* src/PlaylistView.cs (AlbumTreeIterCompareFunc): Sort by track#
+	after album
+
+2005-10-04  Larry Ewing  <lewing@novell.com>
+
+	* src/PlayerInterface.cs: Import from the selected uri not the
+	folder uri.
+
+2005-10-04  Christopher James Lahey  <clahey@ximian.com>
+
+	* src/SourceView.cs: Fixed bug that was ellipsing escaped data
+	instead of escaping ellipsed data.
+
+2005-10-03  Christopher James Lahey  <clahey@ximian.com>
+
+	* data/glade/trackinfo.glade, src/TrackProperties.cs: Added
+	automatic track setting button.
+
+2005-10-03  Aaron Bockover  <aaron@aaronbock.net>
+
+	* src/Preferences.cs, src/PlayerInterface.cs: Enabled burning!
+	* src/AudioCdCore.cs: Bind changes to cd-info.[ch], ignore lead out and
+	data tracks
+	* libbanshee/cd-info.[ch]: If the Linux CDROM ioctl support is available,
+	use it to detect CD track info/CDDB disc ID instead of GStreamer. Fall back
+	on GStreamer (buggy, slower).
+	* configure.ac: Cleaned up a little bit, added headers to check, especially
+	linux/cdrom.h
+
+2005-09-26  Alexander Shopov  <ash@contact.bg>
+
+	* configure.ac: Added "bg" (Bulgarian) to ALL_LINGUAS
+
+2005-09-22  Aaron Bockover  <aaron@aaronbock.net>
+
+	* configure.ac: Require latest ipod-sharp (0.5.6)
+
+	* src/IpodCore.cs: ipod-sharp uses default context by default, removed
+	Ipod.Initializer.UseDefaultContext
+
+	* Makefile.am: added compile to DISTCLEANFILES
+
+	* src/banshee.c: use fork() to run the mono process as a child process of
+	the wrapper, as just exec doesn't work with killall. Handle SIGINT/SIGKILL
+	in the parent process and propagate to the child, and clean up the parent
+
+2005-09-21  Aaron Bockover  <aaron@aaronbock.net>
+
+	* src/Makefile.am: Removed banshee.in/$(WRAPPER) instances and added
+	bin_PROGRAMS/banshee_SOURCE for banshee.c binary 'wrapper'
+	* src/banshee.c: replaced bash wrapper script with a C program that uses
+	execvp to replace the process image with mono. Makes banshee show up as
+	"banshee" in ps instead of "mono" and makes `killall banshee' work. Also
+	only pass --debug to mono if running from build directory, should speed
+	up installed instances
+	* configure.ac: Added AC_DEFINE_UNQUOTED calls to create defines for
+	banshee.c that were AC_SUBST in old banshee.in
+	* src/banshee.in: removed bash wrapper script
+
+2005-09-21  Takeshi AIHANA <aihana@gnome.gr.jp>
+
+	* configure.ac: Added 'ja' (Japanese) to ALL_LINGUAS.
+
+2005-09-20  Aaron Bockover  <aaron@aaronbock.net>
+
+	* src/Main.cs: wrap everything in try/catch and pass the exception to
+	the new ExceptionDialog... any unhandled exception will now be shown
+	in a GUI instead of on the console (which may not be visible)
+
+	* src/ExceptionDialog.cs: Added a nice exception dialog to show
+	unhandled exceptions (hopefully this never gets seen!), and harvest
+	system info to help bug reports
+
+2005-09-19  Žygimantas Beručka  <zygis@gnome.org>
+
+	* configure.ac: Added "lt" to ALL_LINGUAS.
+
+2005-09-19  Aaron Bockover  <aaron@aaronbock.net>
+
+	* src/LogCore.cs: Use a ThreadNotify for events
+	* src/IpodTrackInfo.cs: Prepend explicit file:// to thrwart
+	parsing problems, as Ipod.Song.Filename is always a local path
+	* src/FileEncodeTransaction.cs: Accept TrackInfo or Uri inputs
+	* src/PlayerInterface.cs:
+	* src/Library.cs: Update to use new iPod sync method
+	* src/IpodCore.cs: Rewrote iPod Syncing, now using ipod-sharp-ui
+	* src/Makefile.am: Add ipod-sharp-ui
+	* configure.ac: Added ipod-sharp-ui, moved unstable assembly
+	copy script from src/Makefile.am
+
+2005-09-18  Aaron Bockover  <aaron@aaronbock.net>
+
+	* data/glade/player.glade: Added _M to Music top level menu item and
+	fixed the misspelling "selelected" (awesome word) to "selected".
+	* src/LibraryTransactions.cs: Made two strings make more sense, easier
+	to translate
+
+2005-09-18  Adam Weinberger  <adamw@gnome.org>
+
+	* configure.ac: Added en_CA to ALL_LINGUAS.
+
+2005-09-18  Funda Wang  <fundawang@linux.net.cn>
+
+	* configure.ac: Added Simplified Chinese translation.
+
+2005-09-17  Aaron Bockover  <aaron@aaronbock.net>
+
+	* src/Preferences.cs: Fixed crash on save if no iPod transcoders were
+	available
+
+	* libbanshee/gst-encode.c: Use gnomevfssink, replaced stat() call with
+	gnome_vfs_get_file_info() call
+
+	* src/LibraryTransactions.cs: Explicitly prepend a file:// to the filename
+	passed to new Uri() as ':' in the local file name can cause improper
+	parsing
+
+	* src/PlayerInterface.cs:
+	* src/SearchEntry.cs:
+	* src/NotificationAreaIcon.cs: Fixed gtk-sharp deprecation warnings
+
+	* src/LibraryTrackInfo:
+	* src/Library.cs:
+	* src/LibraryTransactions.cs:
+	* src/BurnCore.cs:
+	* src/AudioCdCore.cs:
+	* src/IpodCore.cs:
+	* src/TrackProperties.cs:
+	* src/GstFileEncoder.cs:
+	* src/FileEncoder.cs:
+	* src/RipTransaction.cs:
+	* mediaengines/gst/GstPlayerEngine.cs:
+	* mediaengines/helix/HelixPlayer.cs: All now use System.Uri instead of
+	strings for filename/URI usage as scheme stuff was getting out of hand
+	without it. All file components should play nicer now
+
+2005-09-16  Aaron Bockover  <aaron@aaronbock.net>
+
+	* src/Database.cs:
+	* src/LibraryTrackInfo.cs:
+	* src/LibraryTransactions.cs:
+	* data/Tables.sql: Date/Time optimizations, loads *much* faster from SQL.
+	Had to create two new table columns: LastPlayedStamp, DateAddedStamp
+
+2005-09-09  Aaron Bockover  <aaron@aaronbock.net>
+
+	* configure.ac: Version 0.9.7.1
+	* hal-sharp/hal-sharp.dll.config.in: DLL mappings for hal-sharp
+	* hal-sharp/Makefile.am: Install hal-sharp.dll.config
+	* src/PipelineProfile.cs: guard against empty/null profile array and protect
+	empty combo box from ever getting its Active index set (segfaults, bug in
+	gtk-sharp)
+	* src/Library.cs: Fixed path creation bug to library DB
+	* src/PlayerInterface.cs: Fixed gstreamer double-skip bug
+	* mediaengines/gst/GstPlayerEngine.cs: fixed iterate cancel bug
+	* data/banshee.schemas.in: Added default column widths per Nat's request
+	* src/RipTransactions.cs: Fixed song-already-in-library exception when
+	ripping (BNC 115945)
+	* src/NotificationAreaIcon.cs: Fix bug on 64 bit
+
+2005-09-08  Dan Winship  <danw@novell.com>
+
+	* src/DragDrop.cs: reorganize the dnd target types into "Source",
+	"PlaylistRows", "LibraryTrackIds", and "UriList". Use
+	MIME-type-style target atoms.
+
+	* src/PlayerInterface.cs: update for DragDrop changes. Use
+	TreeView.EnableModelDragSource and EnableModelDragDest rather than
+	Gtk.Drag.SourceSet and DestSet on the treeviews, so that
+	GtkTreeView will do things like scrolling automatically. Remove
+	code that got moved into PlaylistView.cs and SourceView.cs.
+
+	* src/SourceView.cs (OnDragMotion, OnDragLeave,
+	OnDragDataReceived): Move these here from PlayerInterface and fix
+	up the drag feedback so you can't drop tracks onto sources that
+	won't really accept them. Dynamically add a "New Playlist" line
+	when dragging, so that it's always possible to create a new
+	playlist via dnd, even when there isn't any blank space at the
+	bottom of the source list.
+
+	* src/PlaylistView.cs (OnDragBegin, OnDragMotion): override the
+	default GtkTreeView dnd behavior.
+
+	* src/PlayerInterface.cs (OnItemRemoveActivate,
+	OnItemSelectAllActivate): Don't steal "Del" and "Ctrl+A" keys from
+	the search entry.
+
+2005-09-08  Aaron Bockover  <aaron@aaronbock.net>
+
+	* configure.in: Version 0.9.7
+	* configure.in: Require ipod-sharp 0.5.4
+	* src/IpodCore.cs: Disabled status, some kind of LTM bug... looking into it
+	* src/IpodPropertiesWindow.cs: Fixed NullRef bug
+	* src/Library.cs: Remove tracks from both track caches/maps
+	* src/LibraryTransactions.cs: Remove tracks using new Library remove method
+	in TrackRemoveTransaction
+	* src/TrackInfoHeader.cs: Hide logo/album cover container
+	* libbanshee/gst-encode.c: Fixed double free, and a pipeline element
+	* src/GstFileEncoder.cs: Fixed minor bug
+	* src/Library.cs: Keep track of songs queued for manual removal
+	* src/IpodCore.cs: Fixed manual song remove bug
+	* src/SourceView.cs: AddPlaylist() for adding playlist sources
+	* src/PlayerInterface.cs: Update disk usage bar when device emits Changed
+	signal. Add/Remove playlist specifically from the source view instead of
+	rebuilding the source list. Updated Ipod UI parts.
+
+2005-09-07  Hans Petter Jansson  <hpj@novell.com>
+
+	* libbanshee/xing/emdct.c
+	* libbanshee/xing/hwin.c
+	* libbanshee/xing/l3init.c
+	* libbanshee/xing/mp3enc.cpp
+	* libbanshee/xing/mp3low.h
+	* libbanshee/xing/sbt.c
+	* libbanshee/xing/setup.c
+	* libbanshee/xing/xhwin.c: Make static or add xingenc_ namespace to
+	the most obnoxious exported functions. This fixes a clash with a
+	symbol in GStreamer's oggdec plugin, and makes future clashes less
+	likely. The Xing code still needs a more thorough cleanup.
+
+2005-09-06  Aaron Bockover  <aaron@aaronbock.net>
+
+	* data/glade/player.glade: Moved the iPod box to under the playlist view,
+	will add more iPod crack there later
+	* data/glade/trackinfo.glade: Add an event box behind the title label for
+	setting its tooltip
+	* src/TrackProperties.cs: Show the "editing track" title for single edits
+	and set its tooltip to the URI of the current track
+	* src/PlayerInterface.cs: Only update last played/play count when
+	at least half the song has been played (bug 315168)
+	* data/banshee.schemas.in: schema for CopyOnImport, default to false
+	* src/Preferences.cs: Default to false for CopyOnImport
+	* data/Tables.sql: Removed incomplete and unused Smart Playlist tables
+	* src/Database.cs: WriteCycleFinished event for notifying objects that
+	the current query is finished and it is save to make pending queries
+	* src/LibraryTrackInfo.cs: Catch exception on Save() query for potential
+	database locking and put in a request with the Database core for
+	notification when it is safe to re-try the query
+	* src/IpodTrackInfo.cs:
+	* src/AudioCdCore.cs (AudioCdTrackInfo):
+	* src/LibraryTrackInfo.cs: remove manual UID setting
+	* plugincore/TrackInfo.cs: base class sets UID
+
+2005-09-06  Dan Winship  <danw@novell.com>
+
+	* burn-sharp/Makefile.am:
+	* entagged-sharp/Makefile.am:
+	* hal-sharp/Makefile.am:
+	* mediaengines/gst/Makefile.am:
+	* mediaengines/helix/Makefile.am:
+	* plugincore/Makefile.am:
+	* src/Makefile.am: Install .mdb files along with assemblies.
+
+	* libbanshee/.cvsignore: add CORBA CDDB gunk
+
+	* libbanshee/gst-player-engine.c (gpe_pipeline_setup): Drop
+	"error" param since it's not used. Return success/failure.
+	(gpe_new): if gpe_pipeline_setup() fails, return NULL rather than
+	crashing.
+	(gpe_free): fix leak
+	* mediaengines/gst/GstPlayerEngine.cs (TestInitialize): fill this
+	in.
+	* src/Core.cs: Exit without crashing if the AudioCdPlayer can't be
+	loaded
+
+	* src/EllipsizeLabel.cs: Gtk.Label subclass that checks if an
+	"ellipsize" property exists on the underlying C object and sets it
+	if so (so we get ellipsization on gtk 2.6+ platforms without
+	depending on gtk# 2.6).
+	* src/TrackInfoHeader.cs:
+	* src/LibraryTransactionStatus.cs: Use it
+
+	* src/PlayerInterface.cs (OnPlaylistViewButtonPressEvent): ignore
+	double-clicks in the header area
+
+2005-09-05  Aaron Bockover <aaron@aaronbock.net>
+
+	* src/AudioCdCore.cs: Set the URI for CD tracks to cdda://<track>#<device>
+	* libbanshee/gst-player-engine.c: Added notify::source support for
+	getting the source from the playbin element to set the CD device for
+	cdda:// URIs. Handles cdda:// URIs in the form of cdda://<track>#<device>
+	* src/LibraryTransactions.cs: call Save() on track info after setting
+	new filename when performing copy on import
+	* src/Library.cs: Applied patch to fix death on renaming new iPod (315307)
+
+2005-09-04  Aaron Bockover <aaron@aaronbock.net>
+
+	* banshee: Version 0.9.6
+
+	* src/LibraryTransactions.cs: Added copy-on-import to FileLoadTransaction;
+	obeys GConf setting for the feature
+	* src/Library.cs: IpodSource handles its own syncing and updating of
+	tracks on iPod
+	* src/IpodCore.cs: Fixed to allow manual update and automatic syncing
+	* src/PlaylistView.cs: Show warning icon next to DRMed songs, show
+	sync icon next to pending iPod songs
+	* src/SourceView.cs: Show iPod sources that have been modified (queued
+	for sync) in blue
+	* src/PlayerInterface.cs: Restrict DnD on iPod view, disable view if
+	if active view is a syncing iPod
+	* src/AudioCdCore.cs: Parse proper artist and song title from the track
+	name CDDB field if artist is "Various" and the track name field contains
+	a " / " token (per the CDDB Database Specification)
+	* src/banshee.exe.config.in: Added libbonobo-2 mapping
+	* libbanshee/gst-encode-test.c: Adapted to use pipeline for gst-encode
+	* plugincore/TrackInfo.cs: Added set accessor on Year and Genre
+	* src/CddbClient.cs: Old CDDB HTTP client removed
+	* src/AudioCdCore.cs: Adapted to use CddbSlaveClient
+	* src/CddbSlaveClient.cs: Bindings for CDDB Slave2 CORBA Client
+	* configure.ac: Build rules cor cddb slave code
+	* libbanshee/Makefile.am: Build cddb slave code
+	* libbanshee/cddb-slave-client.[ch]: GObject wrapper around GNOME Media
+	CDDB Slave2 CORBA client
+	* libbanshee/GNOME_Media_CDDBSlave2.idl: IDL Definition for GNOME Media
+	CDDB Slave2 CORBA client
+	* libbanshee/cd-info.[ch]: Added offsets property string with all
+	track offsets for CDDB queries
+
+2005-09-03  Aaron Bockover <aaron@aaronbock.net>
+
+	* src/PlayerInterface.cs: Use the LogCore to report errors to the user
+	* src/LogCore.cs: New logging system to easily propagate and log warnings
+	and errors.
+	* src/IpodCore.cs: File transcoding to allow non-iPod formats to be
+	copied to an iPod. Transcoded song duplicates are cached so they need
+	only be transcoded once. This allows the computer library to be in various
+	formats (Ogg, Flac, Mp3) and the iPod in MP3 or AAC format.
+	* libbanshee/gst-encode.c: Pass a full pipeline for encoding instead of a
+	file extension used to conditionally select a hard coded encoder pipeline
+	* src/FileEncoder.cs, src/GstFileEncoder.cs, src/FileEncodeTransaction.cs,
+	BurnCore.cs: Use PipelineProfile instead of hard coded encoding options
+	* src/Preferences.cs: Encoding preference option for iPod transcoding
+	* data/glade/preferences.cs: Encoding area for iPod
+
+2005-09-02  Aaron Bockover <aaron@aaronbock.net>
+
+	* banshee: Version 0.9.5
+	* data/glade/player.glade: Removed Menu->Playlists, moved Properties to
+	View, added Columns item to View menu
+	* src/Library.cs: TracksFnKeyed table for file name lookups for tracks
+	instead of ID based lookup
+	* src/LibraryTrackInfo.cs: Guard against already imported tracks
+	* src/PlayerInterface.cs: Connect to AudioCdCore.Updated to refresh
+	the view title if update is for CD in current view
+	* src/SourceView.cs: Use Add/Remove events for AudioCdCore to remove
+	and insert AudioCdSources instead of rebuilding the source view tree
+	* src/SourceView.cs: Fixed right click/highlight bug (dup of danw, cvs
+	collision), Draw Markup in Source cell renderer wrapped in
+	GLib.Markup.Escape
+	* src/GConfKeys.cs: LastFileSelectorUri: key to store last position in
+	the file selectors
+	* src/PlayerInterface.cs: Retain last directory in gconf for the file/folder
+	selectors. Open the selector at that path.
+	* src/LibraryTrackInfo.cs, src/IpodTrackInfo.cs, src/AudioCdCore.cs:
+	Set the track UID using UidGenerator.Next
+	* src/Core.cs: NextUid removed in favor of UidGenerator.Next
+	* src/Dialogs.cs: MessageDialogs class for really simple prompting
+	* src/AudioCdCore.cs: Better HAL event and device handling... no longer
+	regenerate disk objects on a HAL event.
+	* src/PlayerInterface.cs: Do not allow drag operations for Audio CDs,
+	Disable search for CDs and Playlists, Cleaned up Menus, Rename on iPod
+	now pops up an iPod-specific rename dialog, fixed markup errors, Fixed
+	playlist appending, only allow rename on sources that allow it
+	* src/Library.cs: CanRename property for Source objects. set accessor
+	on Source.Name removed, moved to Rename method that returns false on
+	failure. PlaylistSource shows an error dialog if it can't rename (existing
+	playlist).
+
+2005-09-02  Dan Winship  <danw@novell.com>
+
+	* src/Dialogs.cs (InputDialog.Execute): make Return == OK.
+
+	* src/PlayerInterface.cs (ImportWithFileSelector,
+	OnMenuImportFilesActivate):
+	* src/Preferences.cs (OnButtonLibraryChangeClicked): Remove
+	incorrect (but harmless) "gnome-vfs" arg.
+
+	* src/SourceView.cs (HighlightPath): select the row. (Fixes so
+	that right-clicking on an unselected row DTRT now.)
+
+2005-09-01  Hans Petter Jansson  <hpj@novell.com>
+
+	* libbanshee/xing/gst-xing-encoder.c (xing_mp3_encoder_chain): Fixed
+	a large memory leak.
+
+2005-09-01  Aaron Bockover <aaron@aaronbock.net>
+
+	* libbanshee/gst-misc.c: Use gst_bin_parsev for pipeline validating
+	* src/PlayerInterface.cs: Only show rip button if in CD view, tooltip for
+	rip button
+	* src/LibraryTrackInfo.cs: Two new constructors for generating a library
+	track object off of pure metadata and an existing URI
+	* src/RipTransaction.cs: Better progress handling, no longer load ripped
+	track into library using a FileLoadTransaction (causes metadata loss if
+	encoder does not support tagging), instead load directly into cache
+	* src/Preferences.cs: Preference page for setting ripping encoder profile
+	* src/PipelineProfile.cs: GStreamer pipeline profile manager
+	* src/GstMisc.cs: Bindings for libbanshee/gst-misc.c
+	* libbanshee/gst-misc.[ch]: Misc. gstreamer functions
+
+	* libbanshee/Makefile.am: Build Xing conditionally (--enable-xing)
+	* configure.ac: Disable Xing by default, --enable-xing to enable
+	* src/FileNamePattern.cs: Full pattern support for naming, creates
+	directory structure if not exist
+	* src/RipTransaction.cs: Bug fixes
+	* libbanshee/cd-rip.c: Fix some bugs
+	* mediaengines/gst/GstPlayerEngine.cs: DllImport on libbanshee
+	* src/GstFileEncoder.cs: DllImport on libbanshee
+	* mediaengines/gst/*.[ch]: moved to libbanshee
+
+	* data/glade/player.glade: Ripping button
+	* src/PlayerInterface.cs: New button to initiate Ripping, added UI code
+	to create and register a RipTransaction
+	* src/Library.cs: Library.sdb is now .banshee.db in new DefaultLibraryPath
+	* src/Utilities.cs: DefaultLibraryPath now ~/My Music
+	* src/FileNamePattern.cs: Base template for a file name pattern class to
+	build file names based on an input pattern and create a directory structure
+	* src/RipTransaction.cs: Bindings to CD Ripping core, and implementing
+	LTM Transaction for Ripping/Encoding. Use xingenc bitrate=192, will
+	make UI for future to pass any gst encoder pipeline
+	* libbanshee/cd-rip.[ch]: CD Ripping Core
+	* src/Library.cs: New default library DB path: ~/My Music/.banshee.db
+	* src/Utilities.cs: New default library location: ~/My Music
+
+2005-08-31  James Willcox  <snorp@snorp.net>
+
+	* src/SearchEntry.cs: delay a bit before emitting the 'changed'
+	event, so we don't do spurious searches.
+	* src/PlayerInterface.cs: guard against a null active track when
+	ejecting an iPod.
+	* burn-sharp/*: synced up
+
+2005-08-31  Aaron Bockover <aaron@aaronbock.net>
+
+	* data/images/source-ipod-{shuffle,photo}.png: New iPod icons
+	* src/SourceView.cs: Show a photo, regular, or shuffle iPod as an icon
+
+2005-08-31  Dan Winship  <danw@novell.com>
+
+	* plugincore/IPlayerEngine.cs: fix a comment
+
+	* mediaengines/helix/HxPlayer.cs (HxPlayer): Use Marshal.SizeOf
+	rather than a hardcoded size.
+	(Dispose): Call GC.SuppressFinalize so
+	HxUnmanaged.ClientPlayerClose() doesn't get called twice if the
+	HxPlayer is explicitly disposed.
+
+	* src/AboutBox.cs: Make sure the timer always gets cleaned up
+	properly when the window closes.
+
+	* src/Core.cs (FindUserRealName): Use g_get_real_name() from glib
+
+	* src/PlayerInterface.cs (OnPlaylistViewMotionNotifyEvent): fix
+	again so column resizing/rearranging works again
+
+	* src/PlaylistView.cs: don't intercept OnColumnClicked. Let the
+	TreeView handle sorting itself. Also, Set a ColumnDragFunction to
+	prevent dragging the content columns before the "now playing"
+	column.
+
+	* src/*.cs: Remove GLib.GType stuff which isn't needed. (Probably
+	copied from another old out-of-date gtk# app)
+
+2005-08-31  James Willcox  <snorp@snorp.net>
+
+	* banshee: 0.9.2
+	* add an emacs modeline to all the .cs sources
+	* src/IpodCore.cs: fix iPod syncing.
+	* src/PlayerInterface.cs (OnSimpleSearch): fix a null reference that
+	was causing some crashes.
+
+2005-08-30  Aaron Bockover  <aaron@aaronbock.net>
+
+	* libbanshee/xing/gst-xing-encoder.[ch]: GStreamer plugin for Xing
+	* libbanshee/xing: Moved Xing Encoder from mediaengines/xing-encoder
+	* libbanshee/gst-init.[ch]: GStreamer initialization
+
+2005-08-30  Hans Petter Jansson  <hpj@novell.com>
+
+	* mediaengines/xing-encoder/xing-mp3-encoder.c
+	(xing_mp3_encoder_set_property): Guard against too low bitrate being
+	set.
+
+2005-08-30  Hans Petter Jansson  <hpj@novell.com>
+
+	* mediaengines/xing-encoder/xing-mp3-encoder.c
+	(xing_mp3_encoder_get_property)
+	(xing_mp3_encoder_set_property): Fix bad symbol references.
+
+2005-08-30  Hans Petter Jansson  <hpj@novell.com>
+
+	* mediaengines/xing-encoder/Makefile.am: Add xing-mp3-encoder.[ch],
+	add $(GST_CFLAGS).
+	* mediaengines/xing-encoder/xing-mp3-encoder.[ch]: Implement Xing MP3
+	Encoder GST plugin.
+
+2005-08-30  Aaron Bockover  <aaron@aaronbock.net>
+
+	* src/PlayerInterface.cs, src/SourceView.cs: Good support for CD Audio
+	Source
+	* src/AudioCdCore.cs: Complete Audio CD Backend, with CDDB support
+	* src/CddbClient.cs: CDDB Client
+	* libbanshee/cd-info.c: DiskID Support
+
+2005-08-30  Dan Winship  <danw@novell.com>
+
+	* src/PlayerInterface.cs (OnPlaylistViewButtonPressEvent): never
+	eat control/shift clicks, so GtkTreeView will handle control-click
+	to unselect rows.
+	(OnPlaylistViewMotionNotifyEvent): Ignore drags below the last row
+	of the tree
+
+2005-08-30  Dan Winship  <danw@novell.com>
+
+	* Makefile.am (SUBDIRS): add po/
+
+	* mediaengines/gst/GstPlayerEngine.cs:
+	* mediaengines/gst/gst-encode.c:
+	* mediaengines/gst/gst-player-engine.c:
+	* mediaengines/helix/HelixPlayer.cs:
+	* mediaengines/helix/HxPlayer.cs:
+	* plugincore/TrackInfo.cs:
+	* src/*.cs: Use _() / Catalog.GetString()
+
+	* plugincore/Makefile.am ($(ASSEMBLY)):
+	* mediaengines/gst/Makefile.am ($(ASSEMBLY)): add -r:Mono.Posix
+
+	* src/Core.cs (UserFirstName): don't add "'s" here, since that has
+	to be part of the localization of "{0}'s Music Library". (Ignoring
+	for now the larger issue that the first word of the user's full
+	name might not be their given name.)
+
+	* src/Library.cs (IpodSource.DiskUsageString): property that
+	returns an internationalized "500 MB of 2 GB (1500 MB Remaining)"
+	string.
+
+	* src/PlayerInterface.cs (OnSimpleSearch): deal with the fact that
+	the field names are now localized rather than being constant
+	strings.
+
+	* src/PlaylistColumns.cs: Add another arg to the constructor
+	giving the database key name, since that won't be related to the
+	column name if LANG != en
+
+	* src/LibraryTrackInfo.cs (IncrementPlayCount): use the invariant
+	datetime format for LastPlayed, not the localized one.
+
+2005-08-29  Aaron Bockover  <aaron@aaronbock.net>
+
+	* banshee: Version 0.9.1
+	* mediaengines/helix/HelixPlayer.cs: Fixed PCM set to 0 bug (314816)
+	* libbanshee/cd-info.c: More internals complete/working, cdparanoia
+	fix in patched gstreamer
+	* src/DBusIPC.cs: Virtual D-Bus methods for TogglePlaying(), Next(),
+	and Previous()
+	* src/Main.cs: Command line option parser, supports --play-pause,
+	--next, and --previous, translated to method calls on running instance
+	over D-Bus
+	* src/PlayerInterface.cs: Generic Next()/Previous() methods for D-Bus,
+	UI Button for Syncing iPod
+	* src/IpodCore.cs: IpodSyncTransaction for auto-syncing iPod
+	* src/PlayerInterface.cs, src/Preferences.cs: Disable CD Burning UI
+	unless BANSHEE_BURN_ENABLE is set (Attn Packagers: DO NOT SET THIS...
+	development only)
+	* src/TrackProperties.cs: Multi-track metadata editor
+
+2005-08-29  Dan Winship  <danw@novell.com>
+
+	* src/PlayerInterface.cs (OnPlaylistViewMotionNotifyEvent): Oops,
+	don't start a song drag if the user is dragging a column. Also,
+	the drag action should have been Move|Copy, not just Move.
+	(OnPlaylistViewButtonReleaseEvent): if the user clicks on a single
+	row of a multi-row selection (without dragging), select just that
+	row.
+
+2005-08-28 Aaron Bockover <aaron@aaronbock.net>
+
+	* banshee: Version 0.9.0
+	* src/AudioCdCore.cs: Implementing cd-info bindings
+	* libbanshee/cd-info.c: Disk/Track info objects, GStreamer to detect
+	sectors, offsets, and track numbers/layouts
+	* src/Library.cs: New AudioCdSource
+	* src/SourceView.cs: Listen to AudioCdCore for events to update the
+	SourceView
+	* src/AudioCdCore.cs: Bindings to cd-detect.c, AudioCdCore class provides
+	a centralized layer for Audio CDs
+	* libbanshee/cd-detect.c: HAL Audio CD Detection Library
+	* libbanshee: Core Banshee C code
+	* src/banshee.exe.config.in: Updated mappings, split up, don't override
+	mono mappings
+	* burn-sharp/burn-sharp.dll.config.in, burn-sharp/Makefile.am: DLL config
+	file for burn-sharp assembly
+	* src/ipod-sharp.dll.config.in, src/Makefile.am: DLL config file for
+	ipod-sharp assembly
+
+2005-08-26 Aaron Bockover <aaron@aaronbock.net>
+
+	* src/NotificationAreaIcon.cs: Tray icon code no longer depends on
+	eggtrayicon in egg in libsonance
+	* libsonance/: Removed
+	* src/LibraryTrackInfo.cs: Fix canSaveToDatabase = true, fixes append to
+	Playlist bug
+	* src/PlayerInterface.cs: Window resize/show patch
+	* data/org.gnome.Banshee.service.in: D-Bus Service File
+	* data/banshee.schemas.in: GConf Schemas
+	* configure.ac: Check for sqlite3
+	* src/Database.cs: Use sqlite3
+
+2005-08-25 Aaron Bockover <aaron@aaronbock.net>
+
+	* data/banshee.desktop.in.in: Moved from banshee.desktop.in
+	* data/Makefile.am: Translate banshee.desktop.in
+	* configure.ac: Better configure checks, fix sqlite problem, hopefully
+	* configure.ac, Makefile.am, po/: Set up infrastructure for translations
+	* mediaengines/xing-encoder/Makefile.am: Fixed so make distcheck works
+	* mediaengines/xing-encoder: Xing MP3 Encoder from RealNetworks
+	* mediaengines/gst/Makefile.am, libsonance/Makefile.am,
+	burn-sharp/Makefile.am: -module -no-version
+	* mediaengines/gst/gst-player-engine.c: Fixed random return
+	* configure.ac: Check /usr/lib, /usr/local for SQLITE
+	* src/SearchEntry.cs: Do not call changed event twice
+	* src/IpodPropertiesWindow.cs: More properties
+	* src/PlayerInterface.cs, src/PlaylistModel.cs, src/PlaylistView.cs:
+	DnD patch by Dan Winship, fixes most DnD issues
+	* mediaengines/helix/HelixPlayer.cs: ClientPlayerMute to unmute
+	PCM on startup
+	* entagged: Dropped from tree
+	* entagged-sharp: Added to tree, updated sync script, updated entagged
+	* configure.ac, src/Makefile.am: Updated for entagged-sharp
+
+2005-08-21 Aaron Bockover <aaron@aaronbock.net>
+
+	* banshee: 0.8.7.1
+	* configure.ac: Export ASM_VERSION instead of VERSION, an assembly-friendly
+	version number string; require ipod-sharp 0.5.11 or better
+	* src/IpodPropertiesWindow.cs: Display labels instead of entries if
+	iPod is mounted read-only
+	* src/PlayerInterface.cs: Only call Device.Save() if iPod is mounted RW
+	* src/ImageAnimation.cs: Fix animation sync bug
+
+2005-08-20 Aaron Bockover <aaron@aaronbock.net>
+
+	* banshee: Version 0.8.7
+	* configure.ac: Version 0.8.7
+	* src/PlayerInterface.cs: Better default window size
+	* src/PlayerInterface.cs: Fixed UI bug that wouldn't show source view
+	if library at startup was empty
+	* banshee: Version 0.8.6
+	* src/PlayerInterface.cs: Search works on the iPod, ejection fixes
+	* src/PlayerInterface.cs: Don't show the source view until the database
+	has been loaded into cache
+	* src/TrackInfoHeader.cs: Don't show Banshee Version
+	* src/PlayerInterface.cs: Nice iPod properties box, properties context
+	menu, generic StopPlaying method
+	* src/IpodPropertiesWindow.cs: Full iPod properties dialog/editor
+	* configure.ac: Added more potential HELIX_LIBS paths to detector
+
+2005-08-18 Aaron Bockover <aaron@aaronbock.net>
+
+	* plugincore/TrackInfo.cs: Abstract TrackInfo class
+	* src/LibraryTrackInfo.cs: Library TrackInfo, extends TrackInfo
+	* src/IpodTrackInfo.cs: Ipod TrackInfo, extends TrackInfo
+	* src/PlayerInterface.cs: Ipod stuff, play from iPod, iPod properties
+	* src/AboutBox.cs: About box patch from Evan... scrolls credits? Woo?
+	* src/DBusIPC.cs: Dbus object, registration, session stuff
+	* src/Main.cs: Instance detection through dbus
+	* banshee: Probably more stuff I missed, because I suck at updating
+	my own ChangeLogs
+
+2005-08-14 Aaron Bockover <aaron@aaronbock.net>
+
+	* banshee: Version 0.8.5
+	* src/PlaylistModel.cs: NullReferenceException bug fixes
+	* src/BurnCore.cs: GConf bug fix
+	* banshee: Various other bug fixes
+
+2005-08-11 Aaron Bockover <aaron@aaronbock.net>
+
+	* src/BurnCore.cs: Fixed 313256 (exception thrown if burner was never
+	configured in preferences... default is now selected)
+
+	* banshee: Version 0.8.4
+	* mediaengines/helix: Helix (hxclientkit) bindings working,
+	HelixPlayer implementation of IPlayerEngine
+	* plugincore/IPlayerEngine.cs: Interface updates
+	* mediaengines/gst/GstPlayerEngine.cs: Updated to implement IPlayerEngine
+	interface updates
+	* src/Preferences.cs: Notify that restart needed after changing Player
+	Engines
+	* src/PlayerInterface.cs: Update song length if it was previously 0
+	with stream length from player engine if available
+	* configure.ac: Detect HELIX_LIBS automatically or set based on configure
+	--with-helix-libs option
+
+2005-08-08 Aaron Bockover <aaron@aaronbock.net>
+
+	* libsonance/Makefile.am: SONANCE_* -> BANSHEE_*
+	* configure.ac: Cleaned up lots of stuff
+	* src/PlayerInterface.cs: Minor bug fixes
+	* mediaengines/gst/GstPlayerEngine.cs: Fixed some error handling bugs,
+	other minor bugs
+	* mediaengines/gst/gst-player-engine.c: Fixed some error handling bugs
+	* banshee.{mds,mdp}: Added entagged, plugincore, mediaengines/gst, and
+	mediaengines/helix Mono Develop projects
+	* Makefile.am: Removed banshee.{mds,mdp} from EXTRA_DIST. Not distributing
+	Mono Develop projects with tarball releases
+
+2005-08-07 Aaron Bockover <aaron@aaronbock.net>
+
+	* banshee: Version 0.8.3
+	* banshee: gst-sharp player engine removed
+	* src/PlayerInterface.cs: Implemented seeking in the UI
+	* mediaengines/gst/GstPlayerEngine.cs: Bindings implementing IPlayerEngine
+	for new GStreamer C player engine core
+	* mediaengines/gst/gst-player-engine.c: New GStreamer C player engine core
+	* mediaengines/gst/gst-player-engine.h: New GStreamer C player engine core
+
+2005-08-04 Aaron Bockover <aaron@aaronbock.net>
+
+	* banshee: Version 0.8.2
+	* configure.ac: --enable-helix option, HME disabled by default
+	* mediaengines/helix/Makefile.am: if ENABLE_HELIX.. build only if requested
+	* banshee: More Sonance->Banshee string changes
+	* banshee: Namespace renamed from Sonance to Banshee
+	* banshee: Files/Graphics updated to read Banshee in public/user places
+	* sonance: Renamed to Banshee
+	* src/Preferences.cs: Player Engine Chooser, Advanced Tab
+	* src/PlayerEngineLoader.cs: Uses gconf to select preferred engine
+	* plugincore/IPlayerEngine.cs: New fields for name, description, author,
+	etc. for engine implementations. Initializer code moved to Initialize()
+	function. Added TestInitialize() to interface.
+	* src/mediaengines/HelixPlayer.cs: More minor fixes, still not working
+
+2005-08-03 Aaron Bockover <aaron@aaronbock.net>
+
+	* sonance: Version 0.8.1
+	* src/PlayerInterface.cs: Rating Menu, Increment Play Count/Date
+	* src/PlaylistView.cs: Column Sorting, new Last Played Column
+	* src/PlaylistColumns.cs: CellRenderer argument
+	* src/TrackInfo.cs: Save count, date, rating
+	* src/RatingRenderer.cs: CellRenderer for stars as rating
+
+2005-08-01 Aaron Bockover <aaron@aaronbock.net>
+
+	* mediaengines/gst/Makefile.am: Fixed rule that removed bundled
+	gst-sharp.dll on distclean
+	* src/TrackInfoHeader.cs: Why I had a hard-coded version number is beyond me
+	* src/PlayerInterface.cs: Fixed Menu->Quit bug not saving settings
+	* data/images: Two new icons
+	* src/PlaylistView.cs: Added column for showing arrow of current
+	playing song
+	* src/PlaylistColumns.cs: Fixed column saving bug
+
+	* sonance: Lots and lots of updates, I'm sure I missed lots of things
+	in the ChangeLog
+
+	* mediaengines/helix: Unworking Helix Core (very close to working,
+	one major bug to figure out)
+
+	* plugincore: New library currently containing IPlayerEngine and
+	ITrackInfo for developing player engine plugins
+	* src/BurnCore.cs: Core CD Burning Engine
+	* src/FileEncodeTransaction: LTM Transaction for the FileEncoder
+	* src/BurnTransaction: LTM Transaction for the CD Burner (not in use ATM)
+	* src/PlayerEngineLoader.cs: Searches for assemblies that have classes
+	implementing IPlayerEngine - loads engines at runtime (no more linking)
+	* src/Core.cs: Use PlayerEngineLoader
+
+2005-07-28 Aaron Bockover <aaron@aaronbock.net>
+
+	* sonance: Version 0.8.0
+	* src/FileEncoder.cs: Abstract engine class for encoding files
+	* src/GstFileEncoder.cs: GStreamer implementation of FileEncoder class
+	using mediaengines/gst/gst-encode
+	* src/NautilusBurnUtil.cs: Utilities for libnautilus-burn-sharp
+
+2005-07-27 Aaron Bockover <aaron@aaronbock.net>
+
+	* burn-sharp/: Added libnautilus-burn-sharp source tree
+	* mediaengines/gst/: Added gst media engine root
+	* mediaengines/gst/gst-encode.c: GStreamer file encoder engine
+	* src/Preferences.cs: CD Burning Preferences
+
+2005-07-20 Aaron Bockover <aaron@aaronbock.net>
+
+	* src/Makefile.am: Updated install-data-hook and uninstall-data rules to
+	play nice with make distcheck
+
+2005-07-19 Aaron Bockover <aaron@aaronbock.net>
+
+	* hal-sharp/: Added hal-sharp source tree
+	* src/Makefile.am: Added hal-sharp, added uninstall-hook rule for ipod-sharp
+
+2005-07-18 Aaron Bockover <aaron@aaronbock.net>
+
+	* configure.ac: Now requires ipod-sharp
+	* src/Makefile.am: Cleaned out some of the unused resources, uses ipod-sharp
+	* src/IpodCore.cs: IpodCore for managing all iPod services
+
+2005-07-12 Aaron Bockover <aaron@aaronbock.net>
+
+	* configure.ac: Got rid of AC_PROG_CC
+
+2005-07-09 Aaron Bockover <aaron@aaronbock.net>
+
+	* Library.cs: New Playlist.Count property
+	* SourceView.cs: Updated source cell renderer to show child count
+	* PlaylistModel.cs: Updated ChangeDirection algorithm, added O(1)
+	regression history for random playback
+	* project: Version 0.7.3
+	* PlayerInterface.cs: Added dynamic playlist context menu item and submenu
+	to add selection to existing or new playlist
+
+2005-07-08 Aaron Bockover <aaron@aaronbock.net>
+
+	* project: removed mm-keys support
+	* LibraryTransactionManager.cs: small bug fix
+	* PlayerInterface.cs: Edit menu enhanced with new items, tooltips on
+	toolbar buttons at the bottom
+	* PlaylistView.cs: the beginning of column sorting
+
+2005-07-07 Aaron Bockover <aaron@aaronbock.net>
+
+	* SqlGenerator.cs: Added Statement.Empty and ParenGroup classes
+	* LibraryTransactions.cs: Made TrackRemoveTransaction an abstract class
+	and added LibraryTrackRemoveTransaction and PlaylistTrackRemoveTransaction
+	that extends TrackRemoveTransaction
+	* PlayerInterface.cs: Proper removal of music from Playlists
+	* PlayerInterface.cs: Prompt a confirm dialog to user to ask if they are
+	sure they want to remove music from their *library*
+	* Core.cs: Find user's real name
+	* PlayerInterface.cs: Name of Playlist or User's Library showed at
+	top of tree view depending on source
+	* SourceView.cs: Single click/arrow up/down now selects source instead
+	of double click/row activate
+	* PlayerInterface.cs: Total Play Duration format updated to include
+	days of music playback as well as hours, minutes, seconds
+	* PlayerInterface.cs: Track Count / Total Play Duration updated on
+	item remove
+
+2005-07-06 Aaron Bockover <aaron@aaronbock.net>
+
+	* SqlGenerator.cs: More SQL classes (generic OR and AND, updated WHERE)
+	* PlaylistModel.cs, PlayerInterface.cs: Fixed logic for removing
+	selected tracks (bug 309608, mtgordon)
+	* LibraryTransactions.cs: New TrackRemoveTransaction to remove a set
+	of tracks from the library
+
+2005-07-06 Aaron Bockover <aaron@aaronbock.net>
+
+	* Project: 0.7.2 Release, and I updated the ChangeLog...
+	* PlaylistModel.cs: Added random/shuffle with history
+	* PlayerInterface.cs: Rename playlist dialog, tool buttons work
+
+2005-06-29 Aaron Bockover <aaron@aaronbock.net>
+
+	* Project: dropped Muine Metadata support, using Entagged
+	* Project: lots of other stuff since last entry, I need to get
+	better about writing the ChangeLog again :)
+
+2005-06-21 Aaron Bockover <aaron@aaronbock.net>
+
+	* PlayerEngine.cs: New abstract class for building modular playback
+	engines. Updated GstPlayer to extend PlayerEngine.
+
+	* PlayerInterface.cs: Various bug fixes, cleanup
+
+	* DBusIPC.cs: Added D-Bus dependency for IPC
+
+	* Project: Updated build system, depends on dbus-sharp, fixed
+	Makefile.am to include id3-vfs
+
+2005-06-20 Aaron Bockover <aaron@aaronbock.net>
+
+	* Project: First import to GNOME CVS as a Novell-owned project. Heavy
+	development ahead, starting to manage ChangeLog again.
+
+
+2005-05-04 Aaron Bockover <aaron@aaronbock.net>
+
+  * PlayerInterface.cs: Playlist renaming/delete/append
+
+  * Library.cs: Playlist renaming/delete/append
+
+  * SourceView.cs: Fixed cell editor for sources
+
+2005-05-03 Aaron Bockover <aaron@aaronbock.net>
+
+  * PlaylistView.cs: Reorder via DnD
+
+2005-05-02 Aaron Bockover <aaron@aaronbock.net>
+
+  * PlayerInterface.cs: New playlist creation support
+
+  * PlaylistView.cs: Multiple row selections supported.
+
+2005-04-28 Aaron Bockover <aaron@aaronbock.net>
+
+  * SimpleNotebook.cs: Very simple Notebook widget (without tabs) for the
+    status header widgets in the top of the main UI.
+
+  * SearchEntry.cs: Custom search entry widget with drop down menu for
+    simple searching
+
+2005-04-24 Aaron Bockover <aaron@aaronbock.net>
+
+  * SqlBuilder.cs: SQL Builder UI for searching/smart playlists.
+
+2005-04-15 Aaron Bockover <aaron@aaronbock.net>
+
+  * PlaylistView.cs: Column states saved, dialog to toggle column visibility
+
+  * TrackInfo.cs: Support for album information now
+
+  * Library.cs: Cache of all Library Tracks
+
+  * PlayerInterface.cs: New Interface!
+
+2005-04-11 Aaron Bockover <aaron@aaronbock.net>
+
+  * TrackInfo.cs: Fixed playlist loading bug
+
+  * Database.cs: SQLite connection managing for threads
+
+2005-04-07 Aaron Bockover <aaron@aaronbock.net>
+
+  * LibraryTransactions.cs: Playlist saving
+
+2005-04-03 Aaron Bockover <aaron@aaronbock.net>
+
+  * PlayerInterface.cs: Added connecting code to the LibraryTransactionStatus
+
+  * LibraryTransactionStatus.cs: Wrote UI for showing statistics in the
+    LibraryTransactionManager.
+
+  * ImageAnimation.cs: Wrote nice Animated Image widget
+
+  * LibraryTransactions.cs: Replaced FileLoader with LibraryTransactions
+
+  * FileLoader.cs: Removed FileLoader
+
+  * LibraryTransactionManager.cs: Wrote LibraryTransactionManager to
+    manage all Library IO in a safe way
+
+2005-04-01 Aaron Bockover <aaron@aaronbock.net>
+
+  * Preferences.cs: Wrote beginning of UI for Mimetype/Decoder handling
+
+2005-03-31 Aaron Bockover <aaron@aaronbock.net>
+
+  * Core.cs: Added support for global DecoderRegistry instance.
+
+  * GstMetadata.cs: Updated to use core global DecoderRegistry for supported
+    mimetype checking instead of old Core DB.
+
+  * DecoderRegistry.cs: Wrote DecoderRegistry class. This handles the parsing
+    of the GStreamer plugins registry to build a local decoders registry
+    for mimetype checking. The decoder registry is saved to XML for quick
+    loading on next run. Also will allow a UI for users to add/remove
+    mimetypes.
+
+  * Database.cs, Core.cs: Removed Core database. All SQL queries are specific
+    to the Library database.
+
+  * Finally, a break from work to really do some hacking on Sonance again :-/
+
+2005-03-10 Aaron Bockover <aaron@aaronbock.net>
+
+  * PlayerInterface.cs: Progress bar for track loading/importing
+
+  * Preferences.cs: You can save/edit preferences
+
+  * Preferences.cs: New preferences dialog.
+
+2005-03-09 Aaron Bockover <aaron@aaronbock.net>
+
+  * FileLoader.cs: Support for SQL queries, sends IDataReader to TrackInfo.
+    Reduces library load times (4000 songs) to 5 seconds! Major optimization!
+
+  * TrackInfo.cs: New constructor that handles a raw IDataReader to reduce
+    the number of SQL queries.
+
+  * PlayerInterface.cs: Using new FileChooserDialog instead of old FileSelector
+
+  * PlaylistView.cs: Now all playlist additions are done based on a queue
+    and an interface timeout. This reduces load time by over 250% (vs. a
+    1:1 loader/UI sync). Uses FileLoader/FileLoaderManager.
+
+  * FileLoader.cs: Wrote a managed file/SQL loader. Manages a queue of
+    load requests, allows the cancellation of all requests. FileLoader
+    objects recurse directories and load TrackInfo objects, or load
+    them from the database.
+
+2005-03-01 Aaron Bockover <aaron@aaronbock.net>
+
+  * PlaylistRowRenderer.cs: Removed extern constructors... not allowed in
+    latest mcs.
+
+  * SourceView.cs: Removed extern constructors... not allowed in latest mcs.
+
+  * Library.cs: Removed extern constructors... not allowed in  latest mcs.
+
+  * All: Changed namespaces to avoid conflicts with mcs 1.1.4. Project
+    now depends on gtk-sharp-2.0 (1.9.2), and the latest gst-sharp (0.2.4)
+    from SVN.
+
+2005-02-28 Aaron Bockover <aaron@aaronbock.net>
+
+  * Library.cs: Set of Source classes to define how to read data from
+    a given source.
+
+  * SourceDialog.cs: A window that embeds a SourceView widget, used by
+    the main interface to show a list of sources.
+
+  * SourceView.cs: A new TreeView widget for showing data sources (Library
+    and a list of Playlists)
+
+  * PlayerInterface.cs: Supports MmKeys.
+
+  * MmKeys.cs: Wraps mm-keys support in libsonance, adds MM-Keys support
+    to Sonance. Adapted from Muine.
+
+  * SignalUtils.cs: Wraps signal utilities in gobject-2.0. Needed for
+    MM-Keys. Adapted from Muine.
+
+  * NoticationAreaIcon.cs: Calls native egg-tray from libsonance
+
+  * Build System: Builds libsonance (C shared library) which includes
+    egg-tray support and mm-keys support. Dropped egg-sharp.dll.
+
+  * libsonance/mm-keys.c: Added to project
+
+  * libsonance/eggtrayicon.c: Added to project
+
+  * Dialogs.cs: Save playlist dialog
+
+  * PlayerInterface.cs: Can save playlist
+
+  * PlaylistView.cs: Now saves playlist to DB
+
+  * Library.cs: Playlist class saves to Library DB
+
+  * Database.cs: More DB utilities
+
+2005-02-26 Aaron Bockover <aaron@aaronbock.net>
+
+  * PlaylistView.cs: Fixed bug when removing item from playlist
+
+  * TrackInfo.cs: Writes metadata to Library database
+
+  * Database.cs: Supports new SQL generator objects as queries
+
+  * SqlGenerator.cs: New SQL query generator to easily generate complex and
+    safe SQL queries
+
+  * PlayerInterface.cs: Lots of code cleanp, and support for interfacing
+    with NotificationAreaIcon.
+
+  * NotificationAreaIcon.cs: Added tray icon support in GNOME through libegg.
+    Uses the egg-sharp.dll assembly, a wraper for libegg.so.
+
+  * Source/Makefile.am: Added libegg.so rule to use gcc to build eggtrayicon.c
+    for the egg-sharp.dll assembly.
+
+2005-02-24 Aaron Bockover <aaron@aaronbock.net>
+
+  * Database.cs: Supports multiple databases (we now have a core and a library
+    database that are independent of eachother).
+
+  * Data/Makefile.am: Included Tables.sql
+
+  * Tables.sql: Defined all SQL Table construction in a SQL file, included
+    as resource.
+
+  * TrackProperties.cs: Updated to reflect new supported metadata. Also only
+    shows fields that we have data for (instead of showing "Unknown Field").
+
+  * TrackInfo.cs: Updated to reflect updated GstMetadata.
+
+  * GstMetadata.cs: Updated GStreamer metadata backend. Using a Hashtable to
+    store tag data.
+
+  * CommonTags.cs: Simple class containing GStreamer tag names as constant
+    members.
+
+  * AboutBox.cs: Updated about box with new graphic, a tabbed information
+    layout, project information, and assembly information. New graphic does
+    not reference version, and version information is written based on the
+    main assembly, so no updates need to be made to this code anymore.
+
+2005-02-21 Aaron Bockover <aaron@aaronbock.net>
+
+  * Database.cs: Added dynamic mime type support checking based on
+    a GstDecoders and MimeSynonyms table in the SQL database.
+    If GstDecoders is empty or non-existant, it is constructed
+    based on the GStreamer registry.xml file. No hard-coded supported
+    mime types exist now.
+
+  * Database.cs: Added SQLite support. SQLite is now a dependency.
+
+2005-02-18 Aaron Bockover <aaron@aaronbock.net>
+
+  * PlayerInterface.cs: Fixed volume loading bug.
+
+2005-02-18 Aaron Bockover <aaron@aaronbock.net>
+
+  * Sonance-0.2.1: Minor release for updates below
+
+  * PlaylistView.cs: Fixed minor bug in playlist. PlayIter now ScrollToCell
+    to always keep the active item in view unless user manually scrolls out
+    of view
+
+  * PlayerInterface.cs: Statusbar now shows total number of items and duration
+    of entire playlist
+
+  * PlaylistView.cs: Added Update event. Fired whenever the playlist changes
+
+  * PlaylistView.cs: Added TotalDuration support to hold the length (time)
+    of entire playlist
+
+2005-02-18 Aaron Bockover <aaron@aaronbock.net>
+
+  * Sonance-0.2 - That was fast!?
+
+2005-02-17 Aaron Bockover <aaron@aaronbock.net>
+
+  * PlayerInterface.cs: Added a GConf client (/apps/Sonance). Now all interface
+    states are saved and loaded (Window size/position, volume, shuffle/repeat,
+    and search bar).
+
+  * PlayerInterface.cs: Added a search box, with back/forward features, and
+    it can be toggled via J or F3 (Similar to Firefox, live searching)
+
+  * PlaylistView.cs: Added searching support
+
+  * PlayerInterface.cs: Added support for "Add" files through Gtk.FileSelection
+    dialog. I hate that dialog. I can't wait for gtk-sharp2 to become stable
+    to use the new Gtk.FileChooser dialog. Mugh.
+
+  * PlaylistView.cs: Added directory reading and recursion for additions
+
+  * PlaylistView.cs: Added support for shuffle and repeat modes
+
+  * PlayerInterface.cs: Many UI enchancements. Interface is now
+    resizeable and there are shuffle/repeat toggle buttons
+
+  * TrackInfo.cs: Implemented a window for viewing selected track properties
+    (Shows metadata for track)
+
+2005-02-17 Aaron Bockover <aaron@aaronbock.net>
+
+  * Sonance-0.1 - First Public Release

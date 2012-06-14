@@ -60,6 +60,7 @@ public class Commit {
 	private List<String> modified;
 
 	private List<String> deleted;
+	private boolean compound = false;
 	
 	/** Constructor. */
 	public Commit(String id, Date date, String message, String[] added, String[] deleted, String[] modified)
@@ -185,5 +186,16 @@ public class Commit {
 	
 	public List<String> getModified() {
 		return this.modified;
+	}
+	/**
+	 * @param b
+	 */
+	public void setCompund(boolean b) {
+		compound = true;
+	}
+	
+	/** Returns compound. */
+	public boolean isCompound() {
+		return compound;
 	}
 }

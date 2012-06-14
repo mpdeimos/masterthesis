@@ -44,6 +44,7 @@
          <scope keywords="CLASS"/>
          <scope keywords="INTERFACE"/>
          <scope keywords="ENUM"/>
+         <debug extension="true"/>
       </block>
    </block-spec>
    <meta type="cq.edit">

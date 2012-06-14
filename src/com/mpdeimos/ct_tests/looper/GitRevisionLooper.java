@@ -29,6 +29,13 @@ import org.conqat.engine.core.core.AConQATProcessor;
 import org.conqat.engine.core.core.ConQATException;
 import org.conqat.lib.commons.string.StringUtils;
 import org.eclipse.jgit.api.CheckoutCommand;
+import org.eclipse.jgit.api.CleanCommand;
+import org.eclipse.jgit.api.ResetCommand;
+import org.eclipse.jgit.api.ResetCommand.ResetType;
+import org.eclipse.jgit.api.errors.InvalidRefNameException;
+import org.eclipse.jgit.api.errors.JGitInternalException;
+import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
+import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.storage.file.FileRepository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -103,6 +110,7 @@ public class GitRevisionLooper extends RevisionLooperMethodBase {
 				finder.findFrom(end);
 			}
 			commits = filter.getCommits();
+			getLogger().error("processing "+commits.size()+" revisions");
 		}
 		catch (Exception e)
 		{
@@ -134,11 +142,24 @@ public class GitRevisionLooper extends RevisionLooperMethodBase {
 					public File getPath() throws ConQATException {
 						CheckoutCommand checkout = new CheckoutCommand(repository) {/**/};
 						checkout.setName(commit.getId());
+						//checkout.setForce(true);
 						try {
 							checkout.call();
 						} catch (Exception e) {
 							getLogger().error(e);
-							throw new ConQATException(e);
+							ResetCommand reset = new ResetCommand(repository) {/**/};
+							reset.setMode(ResetType.HARD);
+							reset.setRef(commit.getId());
+							try {
+								reset.call();
+								CheckoutCommand checkout2 = new CheckoutCommand(repository) {/**/};
+								checkout2.setName(commit.getId());
+//								checkout2.setForce(true);
+								checkout2.call();
+							} catch (Exception e1) {
+								getLogger().error(e1);
+								throw new ConQATException(e1);
+							}
 						}
 						return super.getPath();
 					}
@@ -151,12 +172,11 @@ public class GitRevisionLooper extends RevisionLooperMethodBase {
 			}
 
 			@Override
-			public String peekMessage() {
+			public Commit peekCommit() {
 				if (!hasNext())
 					throw new IllegalStateException();
 				
-				Commit commit = commits.get(index-1);
-				return commit.getMessage();
+				return commits.get(index-1);
 			}
 		};
 	}

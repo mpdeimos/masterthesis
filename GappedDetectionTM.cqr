@@ -1,0 +1,3 @@
+#!com.mpdeimos.ct_tests.GappedDetectionTM
+dir.src=/media/truecrypt2/DEMCore
+dir.out=/media/truecrypt2/results-gfx/B

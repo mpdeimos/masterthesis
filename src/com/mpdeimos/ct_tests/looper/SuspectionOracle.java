@@ -18,6 +18,8 @@ package com.mpdeimos.ct_tests.looper;
 
 import org.conqat.engine.commons.pattern.PatternList;
 
+import com.mpdeimos.ct_tests.vcs.Commit;
+
 /**
  * 
  * @author $Author: $
@@ -26,9 +28,15 @@ import org.conqat.engine.commons.pattern.PatternList;
  */
 public class SuspectionOracle
 {
-	public static boolean isSuspicious(PatternList pl, String message)
-	{
+	public static boolean isSuspicious(PatternList pl,	Commit commit) {
+		return isSuspicious(pl, commit, -1, -1);
+	}
+	public static boolean isSuspicious(PatternList pl, Commit commit, int minChangesetSize, int maxChangesetSize
+			) {
+		if (commit.isCompound())
+			return false;
+		String message = commit.getMessage();
 		message = message.substring(0,Math.min(message.length(), 1000));
-		return pl.matchesAny(message);
+		return (maxChangesetSize < 0 || commit.getModified().size() <= maxChangesetSize) && (minChangesetSize < 0 || commit.getModified().size() >= minChangesetSize) && pl.matchesAny(message);
 	}
 }

@@ -1,0 +1,5 @@
+#!com.mpdeimos.ct_tests.LOC
+param.dir=/media/truecrypt2/monodevelop
+param.lang=CS
+param.include=**/main/src/**/*.cs
+out.dir=/media/truecrypt2/loc/G

@@ -22,6 +22,9 @@
          <configuration ref="@configuration-factory.configuration"/>
          <message-analyzer pattern="@pattern-list-def"/>
          <persist disable="@persist.disable"/>
+         <include prefix="@include.prefix"/>
+         <exclude pattern="@exclude.pattern"/>
+         <changesetSize max-changeset-size="@changeset-size.max" min-changeset-size="@changeset-size.min"/>
       </processor>
       <processor class="org.conqat.engine.commons.string.Concatenator" name="dd">
          <part string="@dir.out"/>
@@ -120,6 +123,7 @@
          <revision-looper ref="@directory-revision-looper"/>
          <include pattern="@pattern-list-def"/>
          <compress enable="@boolean-defaults-processor2"/>
+         <changesetSize max-changeset-size="@changeset-size.max" min-changeset-size="@changeset-size.min"/>
       </processor>
       <param name="compress">
          <attr name="enable"/>
@@ -147,6 +151,18 @@
       <processor class="com.mpdeimos.ct_tests.processors.AlwaysTrueCondition" name="always-true-condition22">
          <input param="@delete-files2"/>
       </processor>
+      <param name="changeset-size">
+         <attr name="min"/>
+         <attr name="max"/>
+      </param>
+      <param name="include">
+         <attr name="prefix">
+            <doc>prefix</doc>
+         </attr>
+      </param>
+      <param name="exclude">
+         <attr name="pattern"/>
+      </param>
    </block-spec>
    <meta type="cq.edit">
       <entries namespace="dir">
@@ -235,7 +251,7 @@
          <entry key="pos" value="-576,120"/>
       </entries>
       <entries namespace="pattern-list-def">
-         <entry key="pos" value="-468,300"/>
+         <entry key="pos" value="-468,340"/>
       </entries>
       <entries namespace="clone-detection-result-bug-suspection-filter">
          <entry key="pos" value="-420,492"/>
@@ -247,13 +263,13 @@
          <entry key="pos" value="-384,624"/>
       </entries>
       <entries namespace="revision-compressor">
-         <entry key="pos" value="0,228"/>
+         <entry key="pos" value="12,264"/>
       </entries>
       <entries namespace="compress">
          <entry key="pos" value="-288,240"/>
       </entries>
       <entries namespace="boolean-defaults-processor2">
-         <entry key="pos" value="-180,228"/>
+         <entry key="pos" value="-180,216"/>
       </entries>
       <entries namespace="bdb-store-factory">
          <entry key="pos" value="-72,348"/>
@@ -262,7 +278,7 @@
          <entry key="pos" value="-72,396"/>
       </entries>
       <entries namespace="concatenator">
-         <entry key="pos" value="-72,300"/>
+         <entry key="pos" value="-72,340"/>
       </entries>
       <entries namespace="persist">
          <entry key="pos" value="708,48"/>
@@ -273,6 +289,15 @@
       </entries>
       <entries namespace="always-true-condition22">
          <entry key="pos" value="-252,348"/>
+      </entries>
+      <entries namespace="changeset-size">
+         <entry key="pos" value="124,209"/>
+      </entries>
+      <entries namespace="include">
+         <entry key="pos" value="-552,408"/>
+      </entries>
+      <entries namespace="exclude">
+         <entry key="pos" value="-565,460"/>
       </entries>
    </meta>
 </conqat>

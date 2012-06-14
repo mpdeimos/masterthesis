@@ -35,9 +35,12 @@ import org.conqat.engine.code_clones.core.CloneDetectionException;
 import org.conqat.engine.code_clones.core.IDatabaseSpace;
 import org.conqat.engine.code_clones.core.KeyValueStoreBase;
 import org.conqat.engine.code_clones.core.Unit;
+import org.conqat.engine.code_clones.core.constraint.CardinalityConstraint;
+import org.conqat.engine.code_clones.core.constraint.GapRatioConstraint;
 import org.conqat.engine.code_clones.core.utils.CloneUtils;
 import org.conqat.engine.code_clones.core.utils.EBooleanStoredValue;
 import org.conqat.engine.code_clones.detection.CloneDetectionResultElement;
+import org.conqat.engine.code_clones.detection.filter.ConstraintBasedCloneClassFilter;
 import org.conqat.engine.code_clones.index.CloneIndex;
 import org.conqat.engine.code_clones.index.CloneIndexBuilder;
 import org.conqat.engine.code_clones.index.CloneIndexCloneDetector;
@@ -96,6 +99,8 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	private CDConfiguration config;
 	private List<CloneDetectionResultElement> cdResultList;
 	private boolean writeInterimResults;
+	
+	private int countCloneModifications = 0;
 	
 	
 	@AConQATFieldParameter(parameter="message-analyzer", attribute="pattern", description="")
@@ -157,6 +162,11 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 
 	private Map<String, Unit[]> units = new HashMap<String, Unit[]>();
 	private boolean disablePersist = false;
+	private String includePrefix = "";
+	private ArrayList<String> excludePattern = new ArrayList<String>();
+
+	private int maxChangesetSize = -1;
+	private int minChangesetSize = -1;
 	
 	/** {@ConQAT.Doc} */
 	@AConQATParameter(name = "dummy", minOccurrences = 0, maxOccurrences = -1, description = ""
@@ -171,9 +181,27 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			@AConQATAttribute(name = "disable", description = "") boolean disable) {
 		this.disablePersist  = disable;
 	}
-	
-	
+	@AConQATParameter(name = "include", description = "", minOccurrences = 0, maxOccurrences = 1)
+	public void setIncludePrefix(
+			@AConQATAttribute(name = "prefix", description = "") String includePrefix) {
+				this.includePrefix = includePrefix;
+	}
+	@AConQATParameter(name = "exclude", description = "", minOccurrences = 0)
+	public void setExcludePattern(
+			@AConQATAttribute(name = "pattern", description = "") String pattern) {
+		this.excludePattern.add(pattern);
+	}
 
+	@AConQATParameter(name = "changesetSize", maxOccurrences = 1, description = "")
+	public void setCompress(
+			@AConQATAttribute(name = "max-changeset-size", description = "default -1") int maxChangesetSize,
+			@AConQATAttribute(name = "min-changeset-size", description = "default -1") int minChangesetSize
+			) throws ConQATException {
+		this.maxChangesetSize = maxChangesetSize;
+		this.minChangesetSize = minChangesetSize;
+		
+	}
+	
 	/** {@inheritDoc} */
 	@Override
 	public CloneDetectionResultElement process() throws ConQATException {
@@ -183,6 +211,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			CloneDetectionResultElement detectionResult = null;
 			CloneDetectionResultElement lastResult = null;
 	
+			long time = System.currentTimeMillis();
 			boolean initPhase = true;
 			
 			for (RevisionInfo revision : revisionLooper)
@@ -222,8 +251,12 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				}
 				getLogger().info("... clones detected");
 				
+				loop_filterClones(detectionResult);
+				
 				CloneDetectionResultElement updatedDetectionResult = loop_cloneTracking(lastResult, detectionResult);
 				getLogger().info("... clones tracked");
+				
+				loop_filterTrackedClones(detectionResult);
 				
 				KeyValueGateway keyValueGateway = null;
 				if (!disablePersist)
@@ -238,26 +271,121 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				{
 					loop_writeResults(revision, detectionResult, "all");
 					loop_writeResults(revision, updatedDetectionResult, "propagated");
+					if (newBugs)
+					{
+						loop_writeResults(revision, detectionResult, "suspect");
+					}
 				}
 				
-				if (newBugs)
-				{
-					loop_writeResults(revision, detectionResult, "suspect");
-				}
 				
 				getLogger().info("... done");
 			}
 			
-			if (detectionResult != null)
-					loop_writeResults(null, detectionResult, "final");
+			getLogger().error("Infected Clones: " + countCloneModifications);
+			time = (System.currentTimeMillis() - time)/1000;
+			getLogger().error("Time (sec): " + time);
+			getLogger().error("|Revs|: " + interestingRevCounter);
 			
-				return detectionResult;
+			if (detectionResult != null)
+			{
+				getLogger().error("|CC|: " + detectionResult.getList().size());
+				if (writeInterimResults)
+					loop_writeResults(null, detectionResult, "final");
+			}
+			
+			return detectionResult;
 		}
 		catch (ConQATException e)
 		{
 			getLogger().error("FAIL", e);
 			throw e;
 		}
+	}
+
+	/**
+	 * @param detectionResult
+	 * @throws ConQATException 
+	 */
+	private void loop_filterClones(CloneDetectionResultElement detectionResult) throws ConQATException {
+		ConstraintBasedCloneClassFilter filter = new ConstraintBasedCloneClassFilter();
+		filter.init(infoMock);
+		filter.setRoot(detectionResult);
+		
+		CardinalityConstraint cardinality = new CardinalityConstraint();
+		cardinality.init(infoMock);
+		cardinality.setCardinality(2, 3);
+		filter.addConstraint(cardinality.process());
+		
+		filter.process(); // pipelined
+	}
+	/**
+	 * @param detectionResult
+	 * @throws ConQATException 
+	 */
+	private void loop_filterTrackedClones(CloneDetectionResultElement detectionResult) throws ConQATException {
+		
+		List<CloneClass> ccs = new ArrayList<CloneClass>();
+		List<Clone> removedClones = new ArrayList<Clone>();
+		for (CloneClass cc : detectionResult.getList())
+		{
+			if (cc.getClones().size() > 3)
+			{
+				for (Clone c : cc.getClones())
+				{
+					lastPotentialBugs.remove(c.getId());
+				}
+				continue; // next
+			}
+			
+			int mean = 0;
+			for (Clone c : cc.getClones())
+			{
+				mean += c.getLengthInUnits();
+			}
+			mean /= cc.getClones().size();
+			
+			removedClones.clear();
+			
+			for (Clone c : cc.getClones())
+			{
+				if (c.getLengthInUnits() > mean*4/3 || c.getLengthInUnits() < mean*2/3)
+				{
+					removedClones.add(c);
+				}
+			}
+			
+			for (Clone c : removedClones)
+			{
+				cc.remove(c);
+				lastPotentialBugs.remove(c.getId());
+			}
+			
+			if (cc.getClones().size() < 2)
+			{
+				for (Clone c : cc.getClones())
+				{
+					lastPotentialBugs.remove(c.getId());
+				}
+			}
+			else
+			{
+				ccs.add(cc);
+			}
+		}
+		
+		detectionResult.setList(ccs);
+		
+		/// TEST CODE
+		ConstraintBasedCloneClassFilter filter = new ConstraintBasedCloneClassFilter();
+		filter.init(infoMock);
+		filter.setRoot(detectionResult);
+		
+		GapRatioConstraint ratio = new GapRatioConstraint();
+		ratio.init(infoMock);
+		ratio.setsetMaxGapRatio(0.2);
+		filter.addConstraint(ratio.process());
+		
+		filter.process(); // pipelined
 	}
 
 	private CloneDetectionResultElement loop_cloneTracking(CloneDetectionResultElement oldDetectionResult,
@@ -309,7 +437,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 	}
 
 	private HashMap<Long, Clone> lastPotentialBugs = new HashMap<Long, Clone>();
-
+	private int interestingRevCounter =0;
 	
 	/**
 	 * @param detectionResult
@@ -325,7 +453,9 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			Statement stmt = null;
 			if (!disablePersist)
 				stmt = dbSpace.getDbConnection().createStatement();
-			boolean potentialBug = SuspectionOracle.isSuspicious(messageAnanlyzerPattern, message);
+			boolean potentialBug = SuspectionOracle.isSuspicious(messageAnanlyzerPattern, revision.getCommit(), minChangesetSize, maxChangesetSize);
+			if (potentialBug)
+				interestingRevCounter ++;
 			boolean newBugs = false;
 			for (CloneClass cloneClass : detectionResult.getList())
 			{
@@ -337,38 +467,50 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 //					if (!EBooleanStoredValue.GHOST.falseForAllClones(cloneClass)) // inconsistent
 		
 				// if something has changed update w/ new suspection message /// XXX what to do w/ old message?
+				
+				// copies old messages
+				for (Clone clone : cloneClass.getClones())
+				{
+					if (EBooleanStoredValue.HAS_ANCESTOR.getValue(clone))
+					{
+						long ancestorId = CloneUtils.getAncestorId(clone);
+						Clone ancestor = lastPotentialBugs.get(ancestorId);
+						if (ancestor != null)
+						{
+							bugMessage = EStringStoredValue.BUGSUSPECTION.get(ancestor);
+							String rev = EStringStoredValue.BUGSUSPECTION_REV.get(ancestor);
+							addSuspection(keyValueGateway, rev, bugMessage, stmt, clone);
+							Integer i = 1;
+							while (true)
+							{
+								String msg = EStringStoredValue.BUGSUSPECTION_N.get(ancestor, i);
+								rev = EStringStoredValue.BUGSUSPECTION_N_REV.get(ancestor, i);
+								if (msg == null)
+									break;
+								addSuspection(keyValueGateway, rev, msg, stmt, clone);
+								i++;
+							}
+							newPotentialBugs.put(clone.getId(), clone);
+						}
+					}
+				}
+				
 				if (potentialBug && EBooleanStoredValue.FINGERPRINT_CHANGED.trueForAtLeastOneClone(cloneClass)) // inconsistent
 				{
 					bugMessage = message;
 					for (Clone clone : cloneClass.getClones())
 					{
-						addSuspection(keyValueGateway, message, stmt, clone);
+						addSuspection(keyValueGateway, revision.getCommit().getId(), message, stmt, clone);
 						newPotentialBugs.put(clone.getId(), clone);
 					}
 					newBugs = true;
+					countCloneModifications++;
 				}
-				else
-				{
-					for (Clone clone : cloneClass.getClones())
-					{
-						if (EBooleanStoredValue.HAS_ANCESTOR.getValue(clone))
-						{
-							long ancestorId = CloneUtils.getAncestorId(clone);
-							Clone ancestor = lastPotentialBugs.get(ancestorId);
-							if (ancestor != null)
-							{
-								bugMessage = EStringStoredValue.BUGSUSPECTION.get(ancestor);
-								addSuspection(keyValueGateway, bugMessage, stmt, clone);
-								newPotentialBugs.put(clone.getId(), clone);
-							}
-						}
-					}
-				}
-				
+
 				if (bugMessage != null)
 				{
 					EStringStoredValue.BUGSUSPECTION.mark(detectionResult);
-					addSuspection(keyValueGateway, bugMessage, stmt, cloneClass);
+					addSuspection(keyValueGateway, null, bugMessage, stmt, cloneClass);
 				}
 			}
 			
@@ -384,11 +526,32 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		}
 	}
 
-	private void addSuspection(KeyValueGateway keyValueGateway, String message,
+	private void addSuspection(KeyValueGateway keyValueGateway, String cid, String message,
 			Statement stmt, KeyValueStoreBase kv) throws SQLException {
-		EStringStoredValue.BUGSUSPECTION.set(kv, message);
+		Object[] args = null;
+		EStringStoredValue key = EStringStoredValue.BUGSUSPECTION;
+		EStringStoredValue key_rev = EStringStoredValue.BUGSUSPECTION_REV;
+		
+		if (key.get(kv, args) != null)
+		{
+			int i = 1;
+			args = new Object[i];
+			key = EStringStoredValue.BUGSUSPECTION_N;
+			key_rev = EStringStoredValue.BUGSUSPECTION_N_REV;
+			
+			do
+			{
+				args[0]=i++;
+			}
+			while(key.get(kv, args) != null);
+		}
+		
+		
+		key.set(kv, message, args);
+		if (cid != null)
+			key_rev.set(kv, cid, args);
 		if (!disablePersist)
-			stmt.addBatch(keyValueGateway.createInsertValueSql(kv.getId(), EStringStoredValue.BUGSUSPECTION.getKey(), message));
+			stmt.addBatch(keyValueGateway.createInsertValueSql(kv.getId(), key.getKey(args), message));
 	}
 
 	private CloneDetectionResultElement loop_runCloneDetection(RevisionInfo revision, ITokenResource resource)
@@ -426,6 +589,7 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				List<Unit> cloneUnits = new ArrayList<Unit>(clone.getLengthInUnits());
 				for (int i = 0; i < clone.getLengthInUnits(); i++)
 				{
+					//if (clone.getStartUnitIndexInElement() + i < fileUnits.length)
 					cloneUnits.add(fileUnits[clone.getStartUnitIndexInElement() + i]);
 				}
 				
@@ -490,8 +654,6 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				if (iTokenElement == null)
 					continue;
 				
-				getLogger().info(" ++ " + file);
-				
 				index.insertFile(iTokenElement);
 				extractUnits(iTokenElement);
 			}
@@ -503,8 +665,6 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 				if (iTokenElement == null)
 					continue;
 				
-				getLogger().info(" +- " + file);
-				
 				if (indexStore.getChunksByOrigin(file) != null)
 					indexStore.removeChunks(file);
 				index.insertFile(iTokenElement);
@@ -513,8 +673,6 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 			for (String file : vcsData.getDeleted())
 			{
 				file = projectName + "/" + file;
-				
-				getLogger().info(" -- " + file);
 				
 				units.remove(file);
 				
@@ -561,7 +719,11 @@ public class CloneTrackingLoop extends ConQATProcessorBase  {
 		scopeBuilder.init(infoMock);
 		scopeBuilder.projectName = this.projectName;
 		scopeBuilder.rootDirectoryName = dir.getPath();
-		scopeBuilder.addIncludePattern(this.config.getIncludePattern());
+		scopeBuilder.caseSensitive = false;
+		scopeBuilder.addIncludePattern(this.includePrefix+this.config.getIncludePattern());
+		for (String ex : excludePattern)
+			scopeBuilder.addExcludePattern(ex);
+				
 		IContentAccessor[] scope = scopeBuilder.process();
 		
 		ResourceBuilder resourceBuilder = new ResourceBuilder();

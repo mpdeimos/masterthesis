@@ -18,6 +18,8 @@ package com.mpdeimos.ct_tests.looper;
 
 import java.util.Iterator;
 
+import com.mpdeimos.ct_tests.vcs.Commit;
+
 /**
  * 
  * @author $Author: $
@@ -26,5 +28,5 @@ import java.util.Iterator;
  */
 public interface RevIterator extends Iterator<RevisionInfo>
 {
-	String peekMessage();
+	Commit peekCommit();
 }

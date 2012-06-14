@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+	$Id: $$
+	$Rev: 12646 $
+	@levd.rating YELLOW Rev: 11033
+-->
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.GappedDetectionTM">
+      <block name="token-file-scope" spec="org.conqat.engine.sourcecode.resource.TokenFileScope">
+         <root dir="@dir.src"/>
+         <project name="Project"/>
+         <language name="CS"/>
+         <include pattern="**/*.cs"/>
+         <case-sensitive value="false"/>
+      </block>
+      <param name="dir">
+         <attr name="src"/>
+         <attr name="out"/>
+      </param>
+      <processor class="org.conqat.engine.code_clones.detection.filter.ConstraintBasedCloneClassFilter" name="constraint-based-clone-class-filter">
+         <input ref="@cs-gapped-clone-detection.detectionresult"/>
+         <constraint type="@gap-constraint"/>
+      </processor>
+      <processor class="org.conqat.engine.code_clones.result.CloneReportWriterProcessor" name="xmloutput">
+         <detection-result ref="@constraint-based-clone-class-filter"/>
+         <output dir="@dir.out" report-name="clones.xml"/>
+      </processor>
+      <block name="cs-gapped-clone-detection" spec="org.conqat.engine.code_clones.languages.cs.CsGappedCloneDetection">
+         <input scope="@token-file-scope.result"/>
+         <clone minlength="7"/>
+         <errors max="5"/>
+         <gap ratio="0.2"/>
+      </block>
+      <processor class="org.conqat.engine.code_clones.core.constraint.GapConstraint" name="gap-constraint">
+         <gaps max="999" min="1"/>
+      </processor>
+      <processor class="org.conqat.engine.code_clones.result.CloneClassLayouter" name="clone-class-layouter">
+         <input ref="@constraint-based-clone-class-filter"/>
+         <info name="Gapped Clones"/>
+      </processor>
+      <processor class="org.conqat.engine.code_clones.result.CloneClassLayouter" name="clone-class-layouter2">
+         <input ref="@cs-gapped-clone-detection.detectionresult"/>
+         <info name="Clones"/>
+      </processor>
+      <processor class="org.conqat.engine.html_presentation.HTMLPresentation" name="html-presentation">
+         <output dir="@dir.out"/>
+         <result ref="@clone-class-layouter2"/>
+         <result ref="@clone-class-layouter"/>
+         <result ref="@merged"/>
+         <result ref="@coverage-map-output.html-result"/>
+      </processor>
+      <block name="coverage-map-output" spec="org.conqat.engine.code_clones.result.CoverageMapOutput">
+         <detection result="@cs-gapped-clone-detection.detectionresult"/>
+         <output dir="@dir.out"/>
+         <info groupId="Coverage"/>
+      </block>
+      <processor class="org.conqat.engine.html_presentation.layouters.PageMergeLayouter" name="merged">
+         <input ref="@assessment-treemap.html-image"/>
+         <info description="Displays assessment results" groupId="foo" name="Clone Map"/>
+      </processor>
+      <block name="assessment-treemap" spec="org.conqat.engine.blocklib.commons.AssessmentTreemap">
+         <input ref="@metric-annotation.result"/>
+         <output dir="@dir.out"/>
+         <assessment key="Clone Assessment"/>
+         <unfiltered-input ref="@token-file-scope.result"/>
+         <size key="LoC"/>
+      </block>
+      <block name="metric-annotation" spec="org.conqat.engine.code_clones.result.MetricAnnotation">
+         <detection result="@cs-gapped-clone-detection.detectionresult"/>
+      </block>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="token-file-scope">
+         <entry key="pos" value="276,96"/>
+      </entries>
+      <entries namespace="dir">
+         <entry key="pos" value="420,0"/>
+      </entries>
+      <entries namespace="constraint-based-clone-class-filter">
+         <entry key="pos" value="144,264"/>
+      </entries>
+      <entries namespace="xmloutput">
+         <entry key="pos" value="144,336"/>
+      </entries>
+      <entries namespace="cs-gapped-clone-detection">
+         <entry key="pos" value="144,192"/>
+      </entries>
+      <entries namespace="gap-constraint">
+         <entry key="pos" value="540,96"/>
+      </entries>
+      <entries namespace="clone-class-layouter">
+         <entry key="pos" value="336,396"/>
+      </entries>
+      <entries namespace="clone-class-layouter2">
+         <entry key="pos" value="528,396"/>
+      </entries>
+      <entries namespace="html-presentation">
+         <entry key="pos" value="444,480"/>
+      </entries>
+      <entries namespace="coverage-map-output">
+         <entry key="pos" value="120,522"/>
+      </entries>
+      <entries namespace="merged">
+         <entry key="pos" value="1020,396"/>
+      </entries>
+      <entries namespace="assessment-treemap">
+         <entry key="pos" value="900,300"/>
+      </entries>
+      <entries namespace="metric-annotation">
+         <entry key="pos" value="636,216"/>
+      </entries>
+   </meta>
+</conqat>

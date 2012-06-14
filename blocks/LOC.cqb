@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+	$Id: $$
+	$Rev: 12646 $
+	@levd.rating YELLOW Rev: 11033
+-->
+<conqat xmlns="http://conqat.cs.tum.edu/ns/config">
+   <block-spec name="com.mpdeimos.ct_tests.LOC">
+      <processor class="org.conqat.engine.html_presentation.layouters.TableLayouter" name="loc-table">
+         <input ref="@loc-aggregator"/>
+         <info description="Lines of Code" name="LOC"/>
+      </processor>
+      <processor class="org.conqat.engine.html_presentation.HTMLPresentation" name="presentation">
+         <result ref="@loc-table"/>
+         <output dir="@out.dir"/>
+         <project title="Tutorial - Getting started with ConQAT"/>
+      </processor>
+      <processor class="org.conqat.engine.resource.analysis.LOCAnalyzer" name="loc-analyzer">
+         <input ref="@src.result"/>
+      </processor>
+      <block name="src" spec="org.conqat.engine.sourcecode.resource.TokenFileScope">
+         <include pattern="@param.include"/>
+         <root dir="@param.dir"/>
+         <project name="test"/>
+         <language name="@param.lang"/>
+      </block>
+      <param name="param">
+         <attr name="include"/>
+         <attr name="dir"/>
+         <attr name="lang"/>
+      </param>
+      <param name="out">
+         <attr name="dir"/>
+      </param>
+      <processor class="org.conqat.engine.commons.aggregation.SumAggregator" name="loc-aggregator">
+         <read key="LoC"/>
+         <input ref="@loc-analyzer"/>
+      </processor>
+   </block-spec>
+   <meta type="cq.edit">
+      <entries namespace="loc-table">
+         <entry key="pos" value="123,288"/>
+      </entries>
+      <entries namespace="presentation">
+         <entry key="pos" value="123,420"/>
+      </entries>
+      <entries namespace="loc-analyzer">
+         <entry key="pos" value="123,140"/>
+      </entries>
+      <entries namespace="src">
+         <entry key="pos" value="123,66"/>
+      </entries>
+      <entries namespace="param">
+         <entry key="pos" value="163,12"/>
+      </entries>
+      <entries namespace="out">
+         <entry key="pos" value="216,360"/>
+      </entries>
+      <entries namespace="loc-aggregator">
+         <entry key="pos" value="123,214"/>
+      </entries>
+   </meta>
+</conqat>

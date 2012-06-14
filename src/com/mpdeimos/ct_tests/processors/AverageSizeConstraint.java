@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------+
 |                                                                          |
-| Copyright 2005-2011 the ConQAT Project                                   |
+| Copyright 2005-2011 The ConQAT Project                                   |
 |                                                                          |
 | Licensed under the Apache License, Version 2.0 (the "License");          |
 | you may not use this file except in compliance with the License.         |
@@ -16,55 +16,43 @@
 +-------------------------------------------------------------------------*/
 package com.mpdeimos.ct_tests.processors;
 
-import org.conqat.engine.code_clones.core.KeyValueStoreBase;
-import org.conqat.engine.code_clones.detection.CloneDetectionResultElement;
-import org.conqat.engine.commons.node.IConQATNode;
+import org.conqat.engine.code_clones.core.Clone;
+import org.conqat.engine.code_clones.core.CloneClass;
+import org.conqat.engine.code_clones.core.constraint.ConstraintBase;
+import org.conqat.engine.core.core.AConQATAttribute;
+import org.conqat.engine.core.core.AConQATParameter;
+import org.conqat.engine.core.core.AConQATProcessor;
 
 /**
+ * {@ConQAT.Doc}
  * 
- * @author $Author: $
- * @version $Rev: $
- * @ConQAT.Rating RED Hash:
+ * @author juergens
+ * @author $Author: juergens $
+ * @version $Rev: 34670 $
+ * @ConQAT.Rating GREEN Hash: 29D379074144EC7A74B33ED4F3516287
  */
-public enum EStringStoredValue {
-	
-	BUGSUSPECTION("bugsuspection"),
-	BUGSUSPECTION_REV("bugsuspection_rev"),
-	BUGSUSPECTION_N("bugsuspection%d"),
-	BUGSUSPECTION_N_REV("bugsuspection%d_rev"),
-	;
-	
-	private String key;
-	
-	private EStringStoredValue(String key)
-	{
-		this.key = key;
-	}
-	
-	public void set(KeyValueStoreBase kv, String value, Object... args)
-	{
-		kv.setValue(getKey(args), value);
-	}
-	
-	public String get(KeyValueStoreBase kv, Object... args)
-	{
-		return kv.getString(getKey(args));
-	}
+@AConQATProcessor(description = ""
+		+ "Constraint that is satisfied if the ratio of gaps to units in the clone class are below a set threshold")
+public class AverageSizeConstraint extends ConstraintBase {
 
-	public void mark(IConQATNode node, Object... args) {
-		node.setValue(getKey(args), true);
-	}
-	public boolean isMarked(IConQATNode node, Object... args) {
-		Object o = node.getValue(getKey(args));
-		return (o != null);
-	}
-	
-	public String getKey(Object... args)
-	{
-		String k = key;
-		if (args != null && args.length > 0)
-			k = String.format(k, args);
+	/** {@inheritDoc} */
+	@Override
+	public boolean satisfied(CloneClass cc) {
+		int mean = 0;
+		for (Clone c : cc.getClones())
+		{
+			mean += c.getLengthInUnits();
+		}
+		mean /= cc.getClones().size();
 		
-		return k;
+		for (Clone c : cc.getClones())
+		{
+			if (c.getLengthInUnits() > mean*4/3 || c.getLengthInUnits() < mean*2/3)
+			{
+				return false;
+			}
+		}
+		
+		return true;
 	}
 }

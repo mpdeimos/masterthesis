@@ -81,25 +81,25 @@ public class InputClassificationPreprocessor extends ConfigurationProcessor<Inpu
 		
 		ProcessorInfoMock processorInfoMock = new ProcessorInfoMock();
 		
-//		if (this.blockIgnorePattern != null)
-//		{
-//			BlockMarker bm = new BlockMarker();
-//			bm.init(processorInfoMock);
-//			bm.setRegionSetName("ignore");
-//			bm.setRoot(tokens);
-//			bm.setPatterns(this.blockIgnorePattern);
-//			bm.process();
-//		}
+		if (this.blockIgnorePattern != null)
+		{
+			BlockMarker bm = new BlockMarker();
+			bm.init(processorInfoMock);
+			bm.setRegionSetName("ignore");
+			bm.setRoot(tokens);
+			bm.setPatterns(this.blockIgnorePattern);
+			bm.process();
+		}
 		
-//		if (regionIgnorePattern != null)
-//		{
-//			RegexRegionMarker rrm = new RegexRegionMarker();
-//			rrm.init(processorInfoMock);
-//			rrm.setRoot(tokens);
-//			rrm.setRegionParameters(this.regionIgnorePattern, "package statements", false);
-//			rrm.setRegionSetName("ignore");
-//			rrm.process();
-//		}
+		if (regionIgnorePattern != null)
+		{
+			RegexRegionMarker rrm = new RegexRegionMarker();
+			rrm.init(processorInfoMock);
+			rrm.setRoot(tokens);
+			rrm.setRegionParameters(this.regionIgnorePattern, "package statements", false);
+			rrm.setRegionSetName("ignore");
+			rrm.process();
+		}
 		
 		if (fileIgnorePattern != null) {
 			ContentMarker cm = new ContentMarker();

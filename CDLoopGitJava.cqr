@@ -1,0 +1,14 @@
+#!com.mpdeimos.ct_tests.CDLoop
+limit.start=null
+limit.end=master
+db.file=db/hsql
+clone.minlength=7
+clone.shaped=true
+flags.traditional-clone-detection=false
+flags.write-interim-results=false
+dir.is-git=true
+dir.src=/media/truecrypt2/DEMDetHaz
+dir.out=/media/truecrypt2/results-final/A-normal
+persist.disable=true
+language.name=cs
+compress.enable=true
